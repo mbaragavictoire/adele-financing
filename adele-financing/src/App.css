@@ -73,8 +73,8 @@
 }
 
 .nav-staff-login {
-  background: #059669;
-  border: 1px solid #059669;
+  background: #2f6df6;
+  border: 1px solid #2f6df6;
   border-radius: 999px;
   padding: 6px 14px;
   font-size: 12.5px;
@@ -85,7 +85,7 @@
 }
 
 .nav-staff-login:hover {
-  background: #047857;
+  background: #1e50c4;
   color: #fff;
 }
 

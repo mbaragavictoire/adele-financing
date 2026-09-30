@@ -14,12 +14,39 @@ function mapCustomer(row) {
     phone_number: row.phone_number,
     gender: row.gender || '',
     email: row.email,
-    address: row.address,
     amount: row.amount,
     duration: row.duration,
     status: row.status,
     registration_date: row.registration_date,
   }
+}
+
+async function findCustomerByIdentity(phoneNumber, email, excludeId = null) {
+  const identityConditions = ['phone_number = ?']
+  const params = [phoneNumber]
+  if (email) {
+    identityConditions.push('LOWER(email) = LOWER(?)')
+    params.push(String(email).trim())
+  }
+  const conditions = [`(${identityConditions.join(' OR ')})`]
+  if (excludeId !== null && excludeId !== undefined && excludeId !== '') {
+    conditions.push('id <> ?')
+    params.push(excludeId)
+  }
+  return queryOne(
+    `SELECT * FROM customers
+     WHERE ${conditions.join(' AND ')}
+     ORDER BY id LIMIT 1`,
+    params,
+  )
+}
+
+async function nextCustomerId() {
+  const max = await queryOne(
+    `SELECT COALESCE(MAX(CAST(SUBSTRING(customer_id, 5) AS UNSIGNED)), 0) AS n
+     FROM customers`,
+  )
+  return genId('CUS', Number(max.n))
 }
 
 // All authenticated staff can view customers
@@ -38,7 +65,7 @@ router.get('/', requireAuth, async (req, res) => {
     }
     if (q.search && q.search.trim() !== '') {
       where.push(
-        '(customer_id LIKE @search OR full_name LIKE @search OR phone_number LIKE @search OR gender LIKE @search)',
+        '(customer_id LIKE @search OR full_name LIKE @search OR phone_number LIKE @search OR email LIKE @search OR gender LIKE @search)',
       )
       params.search = `%${q.search.trim()}%`
     }
@@ -57,21 +84,86 @@ router.get('/:id', requireAuth, async (req, res) => {
   try {
     const row = await queryOne('SELECT * FROM customers WHERE id = ?', [req.params.id])
     if (!row) return res.status(404).json({ error: 'Customer not found.' })
-    const loans = await queryAll(
-      `SELECT
-         l.*,
-         la.application_date,
-         la.approved_at,
-         la.interest_rate,
-         lp.name AS product_name
-       FROM loans l
-       LEFT JOIN loan_applications la ON la.id = l.application_id
-       LEFT JOIN loan_products lp ON lp.id = l.loan_product_id
-       WHERE l.customer_id = ?
-       ORDER BY l.created_at DESC`,
-      [req.params.id],
+
+    const [loans, applications, repayments] = await Promise.all([
+      queryAll(
+        `SELECT
+           l.*,
+           la.application_id,
+           la.application_date,
+           la.approved_at,
+           la.interest_rate,
+           lp.name AS product_name
+         FROM loans l
+         LEFT JOIN loan_applications la ON la.id = l.application_id
+         LEFT JOIN loan_products lp ON lp.id = l.loan_product_id
+         WHERE l.customer_id = ?
+         ORDER BY l.created_at DESC, l.id DESC`,
+        [req.params.id],
+      ),
+      queryAll(
+        `SELECT
+           la.id,
+           la.application_id,
+           la.loan_product_id,
+           lp.name AS product_name,
+           la.requested_amount,
+           la.approved_amount,
+           la.duration AS requested_duration,
+           la.approved_duration,
+           la.interest_rate,
+           la.purpose,
+           la.status,
+           la.application_date,
+           la.approved_at,
+           la.rejected_at,
+           la.rejection_reason,
+           la.created_at
+         FROM loan_applications la
+         LEFT JOIN loan_products lp ON lp.id = la.loan_product_id
+         WHERE la.customer_id = ?
+         ORDER BY la.created_at DESC, la.id DESC`,
+        [req.params.id],
+      ),
+      queryAll(
+        `SELECT
+           r.id,
+           r.repayment_id,
+           r.loan_id,
+           l.loan_id AS loan_reference,
+           r.amount,
+           r.payment_date,
+           r.payment_method,
+           r.reference_number,
+           r.created_at,
+           l.status AS loan_status
+         FROM repayments r
+         JOIN loans l ON l.id = r.loan_id
+         WHERE r.customer_id = ?
+         ORDER BY r.payment_date DESC, r.created_at DESC, r.id DESC`,
+        [req.params.id],
+      ),
+    ])
+
+    const currentLoans = loans.filter((loan) => loan.status === 'active')
+    const previousLoans = loans.filter((loan) => loan.status !== 'active')
+    const completedLoans = loans.filter((loan) => loan.status === 'completed')
+    const outstandingBalance = currentLoans.reduce(
+      (total, loan) => total + Number(loan.outstanding_balance || 0),
+      0,
     )
-    res.json({ customer: mapCustomer(row), loans })
+
+    res.json({
+      customer: mapCustomer(row),
+      loans,
+      current_loan: currentLoans[0] || null,
+      current_loans: currentLoans,
+      previous_loans: previousLoans,
+      completed_loans: completedLoans,
+      applications,
+      repayments,
+      outstanding_balance: outstandingBalance,
+    })
   } catch (e) {
     handleError(res, e)
   }
@@ -85,8 +177,11 @@ router.post('/bulk', requireAuth, requireRole('super_admin', 'loan_officer', 'ma
       return res.status(400).json({ error: 'No customers provided to import.' })
     }
 
-    const lastCount = Number((await queryOne('SELECT COUNT(*) AS c FROM customers')).c)
-    let seq = lastCount
+    const maxCustomer = await queryOne(
+      `SELECT COALESCE(MAX(CAST(SUBSTRING(customer_id, 5) AS UNSIGNED)), 0) AS n
+       FROM customers`,
+    )
+    let seq = Number(maxCustomer.n)
     const imported = []
     const errors = []
 
@@ -98,7 +193,6 @@ router.post('/bulk', requireAuth, requireRole('super_admin', 'loan_officer', 'ma
         const phone_number = String(row.phone_number ?? '').replace(/[^\d+]/g, '')
         const gender = String(row.gender ?? '').trim()
         const email_raw = String(row.email ?? '').trim()
-        const address = row.address ? String(row.address).trim() : null
         const amount = Number(row.amount ?? 0)
         const duration = Number(row.duration ?? 0)
         const status = row.status === 'inactive' ? 'inactive' : 'active'
@@ -139,18 +233,22 @@ router.post('/bulk', requireAuth, requireRole('super_admin', 'loan_officer', 'ma
         }
 
         const normalizedPhone = rwPhoneFull(phone_number)
+        const duplicate = await findCustomerByIdentity(normalizedPhone, email)
+        if (duplicate) {
+          errors.push({ row: index, error: `Customer already exists (${duplicate.customer_id}).` })
+          continue
+        }
         const genderNorm = ['Male', 'Female', 'Other'].includes(gender) ? gender : ''
         const customer_id = genId('CUS', seq++)
         await run(
-          `INSERT INTO customers (customer_id, full_name, phone_number, gender, email, address, amount, duration, status, registration_date)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO customers (customer_id, full_name, phone_number, gender, email, amount, duration, status, registration_date)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             customer_id,
             full_name,
             normalizedPhone,
             genderNorm,
             email,
-            address,
             amount,
             duration,
             status,
@@ -178,7 +276,7 @@ router.post('/bulk', requireAuth, requireRole('super_admin', 'loan_officer', 'ma
 
 router.post('/', requireAuth, requireRole('super_admin', 'loan_officer', 'manager'), async (req, res) => {
   try {
-    const { full_name, phone_number, gender, email, address, amount, duration, status = 'active' } = req.body || {}
+    const { full_name, phone_number, gender, email, amount, duration, status = 'active', registration_date: registrationDateRaw } = req.body || {}
 
     if (!full_name || !phone_number) {
       return res.status(400).json({ error: 'Full name and phone number are required.' })
@@ -187,6 +285,16 @@ router.post('/', requireAuth, requireRole('super_admin', 'loan_officer', 'manage
       return res.status(400).json({ error: 'Phone number must be a valid 9-digit number.' })
     }
     const normalizedPhone = rwPhoneFull(phone_number)
+    const emailValue = String(email ?? '').trim()
+    if (emailValue && !/^\S+@\S+\.\S+$/.test(emailValue)) {
+      return res.status(400).json({ error: 'Please provide a valid email address.' })
+    }
+    const duplicate = await findCustomerByIdentity(normalizedPhone, emailValue)
+    if (duplicate) {
+      return res.status(409).json({
+        error: `A customer with this phone number or email already exists (${duplicate.customer_id}).`,
+      })
+    }
     const amountValue = Number(amount)
     if (!Number.isFinite(amountValue) || amountValue < 0) {
       return res.status(400).json({ error: 'Amount must be a valid number.' })
@@ -196,14 +304,25 @@ router.post('/', requireAuth, requireRole('super_admin', 'loan_officer', 'manage
       return res.status(400).json({ error: 'Duration must be between 0 and 6 months.' })
     }
 
-    const last = await queryOne('SELECT COUNT(*) AS c FROM customers')
-    const customer_id = genId('CUS', Number(last.c))
-    const registration_date = new Date().toISOString().slice(0, 10)
+    const customer_id = await nextCustomerId()
+
+    const rawDate = registrationDateRaw ? String(registrationDateRaw).trim() : ''
+    const today = new Date().toISOString().slice(0, 10)
+    let registration_date
+    if (!rawDate) {
+      registration_date = today
+    } else if (!/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+      return res.status(400).json({ error: 'Date must be in YYYY-MM-DD format.' })
+    } else if (rawDate > today) {
+      return res.status(400).json({ error: 'Date cannot be in the future.' })
+    } else {
+      registration_date = rawDate
+    }
 
     const info = await run(
-      `INSERT INTO customers (customer_id, full_name, phone_number, gender, email, address, amount, duration, status, registration_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [customer_id, full_name, normalizedPhone, gender || '', email || null, address || null, amountValue, durationValue, status, registration_date],
+      `INSERT INTO customers (customer_id, full_name, phone_number, gender, email, amount, duration, status, registration_date)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [customer_id, full_name, normalizedPhone, gender || '', emailValue || null, amountValue, durationValue, status, registration_date],
     )
 
     await writeAudit({
@@ -226,16 +345,16 @@ router.put('/:id', requireAuth, requireRole('super_admin', 'loan_officer', 'mana
     const existing = await queryOne('SELECT * FROM customers WHERE id = ?', [req.params.id])
     if (!existing) return res.status(404).json({ error: 'Customer not found.' })
 
-    const { full_name, phone_number, gender, email, address, amount, duration, status } = req.body || {}
+    const { full_name, phone_number, gender, email, amount, duration, status, registration_date: registrationDateRaw } = req.body || {}
     const updated = {
       full_name: full_name !== undefined ? full_name : existing.full_name,
       phone_number: phone_number !== undefined ? phone_number : existing.phone_number,
       gender: gender !== undefined ? gender : existing.gender,
       email: email !== undefined ? email : existing.email,
-      address: address !== undefined ? address : existing.address,
       amount: amount !== undefined ? amount : existing.amount,
       duration: duration !== undefined ? duration : existing.duration,
       status: status !== undefined ? status : existing.status,
+      registration_date: registrationDateRaw !== undefined ? registrationDateRaw : existing.registration_date,
     }
 
     if (!updated.full_name || !updated.phone_number) {
@@ -245,6 +364,16 @@ router.put('/:id', requireAuth, requireRole('super_admin', 'loan_officer', 'mana
       return res.status(400).json({ error: 'Phone number must be a valid 9-digit number.' })
     }
     const normalizedPhone = rwPhoneFull(updated.phone_number)
+    const emailValue = String(updated.email ?? '').trim() || null
+    if (emailValue && !/^\S+@\S+\.\S+$/.test(emailValue)) {
+      return res.status(400).json({ error: 'Please provide a valid email address.' })
+    }
+    const duplicate = await findCustomerByIdentity(normalizedPhone, emailValue, req.params.id)
+    if (duplicate) {
+      return res.status(409).json({
+        error: `A customer with this phone number or email already exists (${duplicate.customer_id}).`,
+      })
+    }
     const amountValue = Number(updated.amount)
     if (!Number.isFinite(amountValue) || amountValue < 0) {
       return res.status(400).json({ error: 'Amount must be a valid number.' })
@@ -253,19 +382,31 @@ router.put('/:id', requireAuth, requireRole('super_admin', 'loan_officer', 'mana
     if (!Number.isFinite(durationValue) || durationValue < 0 || durationValue > 6) {
       return res.status(400).json({ error: 'Duration must be between 0 and 6 months.' })
     }
+    const rawDate = String(updated.registration_date ?? '').trim()
+    const today = new Date().toISOString().slice(0, 10)
+    let registration_date
+    if (!rawDate) {
+      registration_date = today
+    } else if (!/^\d{4}-\d{2}-\d{2}$/.test(rawDate)) {
+      return res.status(400).json({ error: 'Date must be in YYYY-MM-DD format.' })
+    } else if (rawDate > today) {
+      return res.status(400).json({ error: 'Date cannot be in the future.' })
+    } else {
+      registration_date = rawDate
+    }
 
     await run(
-      `UPDATE customers SET full_name = ?, phone_number = ?, gender = ?, email = ?, address = ?, amount = ?, duration = ?, status = ?
+      `UPDATE customers SET full_name = ?, phone_number = ?, gender = ?, email = ?, amount = ?, duration = ?, status = ?, registration_date = ?
        WHERE id = ?`,
       [
         updated.full_name,
         normalizedPhone,
         updated.gender || '',
-        updated.email,
-        updated.address,
+        emailValue,
         amountValue,
         durationValue,
         updated.status,
+        registration_date,
         req.params.id,
       ],
     )
@@ -294,11 +435,11 @@ router.delete('/:id', requireAuth, requireRole('super_admin', 'manager'), async 
       'SELECT COUNT(*) AS c FROM loans WHERE customer_id = ?',
       [req.params.id],
     )
-    const apps = await queryOne(
+    const applications = await queryOne(
       'SELECT COUNT(*) AS c FROM loan_applications WHERE customer_id = ?',
       [req.params.id],
     )
-    if (Number(loans.c) > 0 || Number(apps.c) > 0) {
+    if (Number(loans.c) > 0 || Number(applications.c) > 0) {
       return res.status(400).json({
         error:
           'This customer has loans or applications. Deactivate them instead of deleting.',

@@ -502,7 +502,7 @@ function PnlTab({ quarter }) {
                       <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 400 }}>{r.note}</div>
                     )}
                   </td>
-                  <td style={r.net ? { color: pnl.net_profit < 0 ? '#dc2626' : '#059669' } : undefined}>
+                  <td style={r.net ? { color: pnl.net_profit < 0 ? '#dc2626' : '#0f9d8f' } : undefined}>
                     {formatCurrency(r.value)}
                   </td>
                 </tr>

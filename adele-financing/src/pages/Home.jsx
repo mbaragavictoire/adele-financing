@@ -62,14 +62,6 @@ economic growth.
               <strong>NDTFS</strong>
               <span>Licensed by BNR</span>
             </div>
-            <div className="hero-stat">
-              <strong>16+</strong>
-              <span>Financing solutions</span>
-            </div>
-            <div className="hero-stat">
-              <strong>100%</strong>
-              <span>Responsible lending</span>
-            </div>
           </div>
         </div>
       </section>

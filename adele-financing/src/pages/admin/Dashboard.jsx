@@ -49,6 +49,18 @@ function Dashboard() {
       accent: 'accent-teal',
     },
     {
+      label: 'Active Customers',
+      value: summary.active_customers ?? 0,
+      icon: '✅',
+      accent: 'accent-green',
+    },
+    {
+      label: 'Inactive Customers',
+      value: summary.inactive_customers ?? 0,
+      icon: '📭',
+      accent: 'accent-navy',
+    },
+    {
       label: 'Active Loans',
       value: summary.active_loans,
       icon: '💰',
@@ -300,7 +312,7 @@ function Dashboard() {
                     style={{
                       width: `${(s.count / maxStatus) * 100}%`,
                       height: '100%',
-                      background: '#059669',
+                      background: '#0f9d8f',
                     }}
                   />
                 </div>

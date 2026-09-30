@@ -7,10 +7,10 @@ const router = Router()
 router.get('/activity', requireAuth, async (req, res) => {
   try {
     const recentApplications = await queryAll(
-      `SELECT la.application_id, c.full_name AS customer_name, lp.name AS product_name,
-              la.requested_amount, la.status, la.created_at
+      `SELECT la.application_id, COALESCE(c.full_name, TRIM(CONCAT_WS(' ', la.applicant_first_name, la.applicant_last_name))) AS customer_name,
+              lp.name AS product_name, la.requested_amount, la.status, la.created_at
        FROM loan_applications la
-       JOIN customers c ON c.id = la.customer_id
+       LEFT JOIN customers c ON c.id = la.customer_id
        JOIN loan_products lp ON lp.id = la.loan_product_id
        ORDER BY la.created_at DESC LIMIT 8`,
     )

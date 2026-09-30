@@ -8,7 +8,7 @@
 .admin-sidebar {
   width: 260px;
   flex-shrink: 0;
-  background: #064e3b;
+  background: #0f2744;
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -40,7 +40,7 @@
 }
 
 .admin-sidebar-brand span {
-  color: var(--gold, #d4a017);
+  color: var(--gold, #2563eb);
   font-size: 12px;
 }
 
@@ -67,8 +67,8 @@
 }
 
 .admin-nav a.active {
-  background: rgba(5, 150, 105, 0.18);
-  border-left-color: var(--gold, #d4a017);
+  background: rgba(15, 157, 143, 0.18);
+  border-left-color: var(--gold, #2563eb);
   color: #fff;
 }
 
@@ -81,7 +81,7 @@
 }
 
 .admin-nav a.active .nav-dot {
-  background: var(--gold, #d4a017);
+  background: var(--gold, #2563eb);
 }
 
 .admin-sidebar-footer {
@@ -100,7 +100,7 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: var(--teal, #059669);
+  background: var(--teal, #0f9d8f);
   display: grid;
   place-items: center;
   font-weight: 700;
@@ -205,7 +205,7 @@
 .admin-card-value {
   font-size: 26px;
   font-weight: 800;
-  color: #064e3b;
+  color: #0f2744;
   margin-top: 6px;
 }
 
@@ -219,8 +219,8 @@
   margin-bottom: 10px;
 }
 
-.accent-teal { background: #d1fae5; }
-.accent-gold { background: #fef3c7; }
+.accent-teal { background: #ccfbf1; }
+.accent-gold { background: #dbeafe; }
 .accent-navy { background: #e0e7ff; }
 .accent-green { background: #dcfce7; }
 .accent-red { background: #fee2e2; }
@@ -314,7 +314,7 @@
 .status-inactive { background: #f1f5f9; color: #64748b; }
 .status-completed { background: #dbeafe; color: #1e40af; }
 .status-paid { background: #dcfce7; color: #166534; }
-.status-disbursement { background: #d1fae5; color: #065f46; }
+.status-disbursement { background: #ccfbf1; color: #115e59; }
 .status-repayment { background: #e0e7ff; color: #3730a3; }
 
 /* Buttons */
@@ -330,22 +330,22 @@
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
-  color: #064e3b;
+  color: #0f2744;
 }
 
 .admin-btn:hover { background: #f1f5f9; }
 
 .admin-btn-primary {
-  background: #059669;
-  border-color: #059669;
+  background: #0f9d8f;
+  border-color: #0f9d8f;
   color: #fff;
 }
 
-.admin-btn-primary:hover { background: #047857; }
+.admin-btn-primary:hover { background: #0c8277; }
 
 .admin-btn-gold {
-  background: #d4a017;
-  border-color: #d4a017;
+  background: #2563eb;
+  border-color: #2563eb;
   color: #1f2937;
 }
 
@@ -366,7 +366,7 @@
 .admin-btn-ghost {
   border: none;
   background: none;
-  color: #059669;
+  color: #0f9d8f;
   padding: 4px 6px;
   font-size: 13px;
   cursor: pointer;
@@ -400,7 +400,7 @@
 .admin-input:focus,
 .admin-select:focus,
 .admin-textarea:focus {
-  outline: 2px solid #059669;
+  outline: 2px solid #0f9d8f;
   outline-offset: -1px;
   border-color: transparent;
 }
@@ -565,7 +565,7 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: linear-gradient(135deg, #064e3b, #043b2d);
+  background: linear-gradient(135deg, #0f2744, #091a30);
 }
 
 .admin-login-card {
@@ -627,7 +627,7 @@
   background: none;
   cursor: pointer;
   font-size: 13px;
-  color: #059669;
+  color: #0f9d8f;
   font-weight: 600;
   padding: 6px;
 }
@@ -636,14 +636,14 @@
   display: block;
   text-align: right;
   font-size: 13px;
-  color: #059669;
+  color: #0f9d8f;
   margin-bottom: 18px;
 }
 
 .admin-login-link button {
   border: none;
   background: none;
-  color: #059669;
+  color: #0f9d8f;
   font-size: 13px;
   cursor: pointer;
   font-weight: 600;
@@ -654,7 +654,7 @@
   padding: 13px;
   border: none;
   border-radius: 9px;
-  background: #059669;
+  background: #0f9d8f;
   color: #fff;
   font-size: 15px;
   font-weight: 700;
@@ -662,7 +662,7 @@
   letter-spacing: 0.3px;
 }
 
-.admin-login-btn:hover { background: #047857; }
+.admin-login-btn:hover { background: #0c8277; }
 .admin-login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .admin-login-back {
@@ -674,7 +674,7 @@
   text-decoration: none;
 }
 
-.admin-login-back:hover { color: #059669; }
+.admin-login-back:hover { color: #0f9d8f; }
 
 /* Loader */
 .admin-loader {
@@ -713,8 +713,8 @@
 }
 
 .admin-tab.active {
-  color: #059669;
-  border-bottom-color: #059669;
+  color: #0f9d8f;
+  border-bottom-color: #0f9d8f;
 }
 
 /* Roles chips */
@@ -726,7 +726,7 @@
 }
 
 .role-super_admin { background: #ede9fe; color: #5b21b6; }
-.role-loan_officer { background: #d1fae5; color: #065f46; }
+.role-loan_officer { background: #ccfbf1; color: #115e59; }
 .role-finance_officer { background: #e0e7ff; color: #3730a3; }
 .role-manager { background: #fef3c7; color: #92400e; }
 

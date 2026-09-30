@@ -1,21 +1,30 @@
 import { Router } from 'express'
-import { queryAll, queryOne, run } from '../db.js'
+import { queryAll, queryOne, run, withTransaction } from '../db.js'
 import { requireAuth, requireRole, handleError } from '../auth.js'
 import { writeAudit, genId } from '../utils.js'
+import { findOrCreateCustomer } from './publicApplications.js'
 
 const router = Router()
 
 const applicationWithJoins = `
   SELECT
     la.*,
-    c.full_name AS customer_name,
-    c.customer_id,
-    c.phone_number AS customer_phone,
+    COALESCE(c.full_name, TRIM(CONCAT_WS(' ', la.applicant_first_name, la.applicant_last_name))) AS customer_name,
+    c.customer_id AS customer_reference,
+    COALESCE(c.phone_number, la.applicant_phone, '') AS customer_phone,
+    COALESCE(c.email, la.applicant_email, '') AS customer_email,
+    COALESCE(c.gender, '') AS customer_gender,
     lp.name AS product_name
   FROM loan_applications la
-  JOIN customers c ON c.id = la.customer_id
+  LEFT JOIN customers c ON c.id = la.customer_id
   JOIN loan_products lp ON lp.id = la.loan_product_id
 `
+
+function httpError(statusCode, message) {
+  const error = new Error(message)
+  error.statusCode = statusCode
+  return error
+}
 
 // All authenticated staff can view applications
 router.get('/', requireAuth, async (req, res) => {
@@ -35,7 +44,7 @@ router.get('/', requireAuth, async (req, res) => {
     }
     if (q.search && q.search.trim() !== '') {
       where.push(
-        '(la.application_id LIKE @search OR c.full_name LIKE @search OR lp.name LIKE @search)',
+        '(la.application_id LIKE @search OR c.full_name LIKE @search OR lp.name LIKE @search OR la.applicant_phone LIKE @search OR la.applicant_email LIKE @search OR CONCAT_WS(\' \', la.applicant_first_name, la.applicant_last_name) LIKE @search)',
       )
       params.search = `%${q.search.trim()}%`
     }
@@ -76,29 +85,55 @@ router.post('/', requireAuth, requireRole('super_admin', 'loan_officer', 'manage
     if (!product) return res.status(400).json({ error: 'Loan product not found.' })
 
     const amount = Number(requested_amount)
-    if (!(amount > 0)) return res.status(400).json({ error: 'Invalid requested amount.' })
+    const durationValue = Number(duration)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ error: 'Invalid requested amount.' })
+    }
+    const minAmount = Number(product.min_amount) || 0
+    const maxAmount = Number(product.max_amount) || 0
+    if (amount < minAmount || (maxAmount > 0 && amount > maxAmount)) {
+      return res.status(400).json({ error: 'Requested amount is outside the product limits.' })
+    }
+    if (!Number.isInteger(durationValue) || durationValue < 1 || durationValue > Number(product.max_duration || 6)) {
+      return res.status(400).json({ error: 'Invalid loan duration.' })
+    }
 
-    const last = await queryOne('SELECT COUNT(*) AS c FROM loan_applications')
-    const application_id = genId('APP', Number(last.c))
     const application_date = new Date().toISOString().slice(0, 10)
-
-    const info = await run(
-      `INSERT INTO loan_applications
-        (application_id, customer_id, loan_product_id, requested_amount, duration, purpose,
-         application_date, assigned_loan_officer_id, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        application_id,
-        customer_id,
-        loan_product_id,
-        amount,
-        duration,
-        purpose || null,
-        application_date,
-        req.user.sub,
-        'pending',
-      ],
-    )
+    let application_id = ''
+    let info
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const maxApp = await queryOne(
+        `SELECT COALESCE(MAX(CAST(SUBSTRING(application_id, 5) AS UNSIGNED)), 0) AS n
+         FROM loan_applications`,
+      )
+      const candidateId = genId('APP', Number(maxApp.n))
+      try {
+        info = await run(
+          `INSERT INTO loan_applications
+            (application_id, customer_id, loan_product_id, requested_amount, duration, purpose,
+             application_date, assigned_loan_officer_id, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            candidateId,
+            customer_id,
+            loan_product_id,
+            amount,
+            durationValue,
+            purpose || null,
+            application_date,
+            req.user.sub,
+            'pending',
+          ],
+        )
+        application_id = candidateId
+        break
+      } catch (error) {
+        if (error?.code !== 'ER_DUP_ENTRY' || attempt === 4) throw error
+      }
+    }
+    if (!application_id) {
+      return res.status(500).json({ error: 'Could not allocate an application reference. Please try again.' })
+    }
 
     await writeAudit({
       userId: req.user.sub,
@@ -126,7 +161,13 @@ router.put('/:id/review', requireAuth, requireRole('super_admin', 'loan_officer'
     if (!['under_review'].includes(status))
       return res.status(400).json({ error: 'Invalid status.' })
 
-    await run('UPDATE loan_applications SET status = ? WHERE id = ?', [status, req.params.id])
+    const updated = await run(
+      "UPDATE loan_applications SET status = ? WHERE id = ? AND status = 'pending'",
+      [status, req.params.id],
+    )
+    if (updated.changes !== 1) {
+      return res.status(409).json({ error: 'This application is no longer pending.' })
+    }
 
     await writeAudit({
       userId: req.user.sub,
@@ -154,12 +195,15 @@ router.put('/:id/reject', requireAuth, requireRole('super_admin', 'loan_officer'
     if (!reason || !reason.trim())
       return res.status(400).json({ error: 'A rejection reason is required.' })
 
-    await run(
+    const updated = await run(
       `UPDATE loan_applications
        SET status = 'rejected', rejection_reason = ?, rejected_by = ?, rejected_at = NOW()
-       WHERE id = ?`,
+       WHERE id = ? AND status NOT IN ('approved', 'rejected')`,
       [reason.trim(), req.user.sub, req.params.id],
     )
+    if (updated.changes !== 1) {
+      return res.status(409).json({ error: 'This application is already finalized.' })
+    }
 
     await writeAudit({
       userId: req.user.sub,
@@ -178,40 +222,134 @@ router.put('/:id/reject', requireAuth, requireRole('super_admin', 'loan_officer'
 
 router.put('/:id/approve', requireAuth, requireRole('super_admin', 'manager'), async (req, res) => {
   try {
-    const app = await queryOne('SELECT * FROM loan_applications WHERE id = ?', [req.params.id])
-    if (!app) return res.status(404).json({ error: 'Application not found.' })
-    if (app.status !== 'under_review')
-      return res.status(400).json({ error: 'Only applications under review can be approved.' })
+    const result = await withTransaction(async (tx) => {
+      const app = await tx.queryOne(
+        'SELECT * FROM loan_applications WHERE id = ? FOR UPDATE',
+        [req.params.id],
+      )
+      if (!app) throw httpError(404, 'Application not found.')
+      if (app.status !== 'under_review') {
+        throw httpError(409, 'Only applications under review can be approved.')
+      }
 
-    const product = await queryOne('SELECT * FROM loan_products WHERE id = ?', [app.loan_product_id])
+      const product = await tx.queryOne(
+        'SELECT * FROM loan_products WHERE id = ?',
+        [app.loan_product_id],
+      )
+      if (!product) throw httpError(400, 'Loan product not found.')
 
-    const approved_amount = Number(req.body?.approved_amount || app.requested_amount)
-    const approved_duration = Number(req.body?.approved_duration || app.duration)
-    const interest_rate = Number(
-      req.body?.interest_rate ?? product?.interest_rate ?? 0,
-    )
+      const approvedAmount = Number(req.body?.approved_amount ?? app.requested_amount)
+      const approvedDuration = Number(req.body?.approved_duration ?? app.duration)
+      const interestRate = Number(req.body?.interest_rate ?? product.interest_rate ?? 0)
+      const maxDuration = Number(product.max_duration) || 6
+      const minAmount = Number(product.min_amount) || 0
+      const maxAmount = Number(product.max_amount) || 0
 
-    if (!(approved_amount > 0)) return res.status(400).json({ error: 'Invalid approved amount.' })
+      if (!Number.isFinite(approvedAmount) || approvedAmount <= 0) {
+        throw httpError(400, 'Invalid approved amount.')
+      }
+      if (approvedAmount < minAmount || (maxAmount > 0 && approvedAmount > maxAmount)) {
+        throw httpError(
+          400,
+          `Approved amount must be between ${minAmount} and ${maxAmount || 'the product maximum'} RWF.`,
+        )
+      }
+      if (!Number.isInteger(approvedDuration) || approvedDuration < 1 || approvedDuration > maxDuration) {
+        throw httpError(400, `Approved duration must be between 1 and ${maxDuration} months.`)
+      }
+      if (!Number.isFinite(interestRate) || interestRate < 0) {
+        throw httpError(400, 'Invalid interest rate.')
+      }
 
-    await run(
-      `UPDATE loan_applications
-       SET status = 'approved', approved_amount = ?, approved_duration = ?, interest_rate = ?,
-           approved_by = ?, approved_at = NOW()
-       WHERE id = ?`,
-      [approved_amount, approved_duration, interest_rate, req.user.sub, req.params.id],
-    )
+      let customer = app.customer_id
+        ? await tx.queryOne('SELECT * FROM customers WHERE id = ?', [app.customer_id])
+        : null
+      const hadLinkedCustomer = Boolean(customer)
+      let customerCreated = false
 
-    await writeAudit({
-      userId: req.user.sub,
-      userName: req.user.name,
-      action: 'APPLICATION_APPROVED',
-      description: `Approved application ${app.application_id} for ${approved_amount} RWF`,
-      relatedRecord: `application:${app.application_id}`,
+      if (!customer) {
+        const first = String(app.applicant_first_name ?? '').trim()
+        const last = String(app.applicant_last_name ?? '').trim()
+        const phone = String(app.applicant_phone ?? '').trim()
+        if (!`${first} ${last}`.trim() || !phone) {
+          throw httpError(400, 'Applicant name and phone number are required before approval.')
+        }
+
+        const customerResult = await findOrCreateCustomer(
+          {
+            first,
+            last,
+            email: app.applicant_email,
+            phone,
+            amount: approvedAmount,
+            duration: approvedDuration,
+            applicationDate: app.application_date,
+          },
+          tx,
+        )
+        customer = customerResult.customer
+        customerCreated = customerResult.created
+      }
+
+      if (!customer) throw httpError(500, 'Customer could not be resolved.')
+
+      // The customer record stores the latest approved amount and duration. The
+      // application remains the authoritative historical record of this request.
+      await tx.run('UPDATE customers SET amount = ?, duration = ? WHERE id = ?', [
+        approvedAmount,
+        approvedDuration,
+        customer.id,
+      ])
+
+      const updated = await tx.run(
+        `UPDATE loan_applications
+         SET status = 'approved', approved_amount = ?, approved_duration = ?, interest_rate = ?,
+             customer_id = ?, approved_by = ?, approved_at = NOW()
+         WHERE id = ? AND status = 'under_review'`,
+        [approvedAmount, approvedDuration, interestRate, customer.id, req.user.sub, req.params.id],
+      )
+      if (updated.changes !== 1) {
+        throw httpError(409, 'This application was already approved by another user.')
+      }
+
+      if (customerCreated) {
+        await writeAudit({
+          userId: req.user.sub,
+          userName: req.user.name,
+          action: 'CUSTOMER_CREATED_FROM_APPROVAL',
+          description: `Created customer ${customer.full_name} (${customer.customer_id}) from approved application ${app.application_id}`,
+          relatedRecord: `customer:${customer.customer_id}`,
+        }, tx)
+      } else if (!hadLinkedCustomer) {
+        await writeAudit({
+          userId: req.user.sub,
+          userName: req.user.name,
+          action: 'CUSTOMER_LINKED_FROM_APPROVAL',
+          description: `Linked approved application ${app.application_id} to existing customer ${customer.full_name} (${customer.customer_id})`,
+          relatedRecord: `application:${app.application_id}`,
+        }, tx)
+      }
+
+      await writeAudit({
+        userId: req.user.sub,
+        userName: req.user.name,
+        action: 'APPLICATION_APPROVED',
+        description: `Approved application ${app.application_id} for ${approvedAmount} RWF`,
+        relatedRecord: `application:${app.application_id}`,
+      }, tx)
+
+      const row = await tx.queryOne(`${applicationWithJoins} WHERE la.id = ?`, [req.params.id])
+      const customerRow = await tx.queryOne('SELECT * FROM customers WHERE id = ?', [customer.id])
+      return {
+        application: row,
+        customer: customerRow,
+        customer_created: customerCreated,
+      }
     })
 
-    const row = await queryOne(`${applicationWithJoins} WHERE la.id = ?`, [req.params.id])
-    res.json({ application: row })
+    res.json(result)
   } catch (e) {
+    if (e.statusCode) return res.status(e.statusCode).json({ error: e.message })
     handleError(res, e)
   }
 })

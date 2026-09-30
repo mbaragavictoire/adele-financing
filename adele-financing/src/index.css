@@ -1,15 +1,15 @@
 :root {
-  --navy: #064e3b;
-  --navy-dark: #043b2d;
-  --teal: #059669;
-  --teal-dark: #047857;
-  --gold: #d4a017;
+  --navy: #0e2540;
+  --navy-dark: #091a30;
+  --teal: #0f9d8f;
+  --teal-dark: #0c8277;
+  --gold: #2563eb;
   --text: #1f2937;
   --text-muted: #64748b;
   --bg: #ffffff;
   --bg-soft: #f4f7fa;
   --border: #e2e8f0;
-  --shadow: 0 10px 30px rgba(6, 78, 59, 0.08);
+  --shadow: 0 10px 30px rgba(14, 37, 64, 0.08);
   --radius: 12px;
   --font: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
 }

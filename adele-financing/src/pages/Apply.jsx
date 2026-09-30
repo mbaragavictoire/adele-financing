@@ -2,6 +2,7 @@ import { useState } from 'react'
 import '../pages.css'
 import { PhoneInput } from '../admin/ui.jsx'
 import { isValidRwPhone, rwPhoneFull } from '../admin/phone.js'
+import { apiUrl } from '../admin/api.js'
 
 const initialForm = {
   first: '',
@@ -113,7 +114,7 @@ function Apply() {
       }
       files.forEach((f) => body.append('documents', f))
 
-      const res = await fetch('/api/apply', {
+      const res = await fetch(apiUrl('/apply'), {
         method: 'POST',
         body,
       })

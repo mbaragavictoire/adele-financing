@@ -6,11 +6,12 @@ import { isValidRwPhone } from '../../admin/phone.js'
 const emptyCustomer = {
   full_name: '',
   phone_number: '',
+  email: '',
   gender: '',
-  address: '',
   amount: '',
   duration: '',
   status: 'active',
+  registration_date: new Date().toISOString().slice(0, 10),
 }
 
 const normHeader = (h) =>
@@ -49,18 +50,16 @@ function mapSheetRows(json) {
       const phone_number = String(cell('B')).replace(/[^\d+]/g, '')
       const gender = String(cell('C')).trim()
       const email = String(cell('D')).trim()
-      const address = String(cell('E')).trim()
-      const amount = Number(cell('F'))
-      const duration = Number(cell('G'))
-      const status = String(cell('H')).trim().toLowerCase()
-      const registration_date = toIsoDate(cell('I')) || new Date().toISOString().slice(0, 10)
-      if (full_name || phone_number || gender || email || address || cell('F') || cell('G')) {
+      const amount = Number(cell('E'))
+      const duration = Number(cell('F'))
+      const status = String(cell('G')).trim().toLowerCase()
+      const registration_date = toIsoDate(cell('H')) || new Date().toISOString().slice(0, 10)
+      if (full_name || phone_number || gender || email || cell('E') || cell('F')) {
         out.push({
           full_name,
           phone_number,
           gender,
           email,
-          address,
           amount: Number.isFinite(amount) ? amount : 0,
           duration: Number.isFinite(duration) ? duration : 0,
           status: status === 'inactive' ? 'inactive' : 'active',
@@ -82,9 +81,8 @@ function mapSheetRows(json) {
     const phone_number = String(get(['phone_number', 'phone', 'mobile', 'tel'])).replace(/[^\d+]/g, '')
     const gender = String(get(['gender'])).trim()
     const email = String(get(['email', 'mail'])).trim()
-    const address = String(get(['address'])).trim()
     const amount = Number(get(['amount']))
-    const duration = Number(get(['duration', 'months']))
+    const duration = Number(get(['duration', 'months', 'period', 'periodmonths', 'periodmonth', 'term']))
     const status = String(get(['status'])).trim().toLowerCase()
     const registration_date = toIsoDate(get(['registration_date', 'date', 'regdate', 'registered'])) || new Date().toISOString().slice(0, 10)
     if (!full_name && !phone_number) continue
@@ -93,7 +91,6 @@ function mapSheetRows(json) {
       phone_number,
       gender,
       email,
-      address,
       amount: Number.isFinite(amount) ? amount : 0,
       duration: Number.isFinite(duration) ? duration : 0,
       status: status === 'inactive' ? 'inactive' : 'active',
@@ -149,11 +146,12 @@ function Customers() {
     setForm({
       full_name: c.full_name,
       phone_number: c.phone_number,
+      email: c.email || '',
       gender: c.gender || '',
-      address: c.address || '',
       amount: c.amount ?? '',
       duration: c.duration ?? '',
       status: c.status,
+      registration_date: c.registration_date || new Date().toISOString().slice(0, 10),
     })
     setViewing(c)
     setEditing(true)
@@ -182,15 +180,25 @@ function Customers() {
   async function viewCustomer(c) {
     try {
       const data = await apiGet(`/customers/${c.id}`)
-      setViewing({ ...data.customer, loans: data.loans || [] })
+      setViewing({
+        ...data.customer,
+        loans: data.loans || [],
+        current_loans: data.current_loans || [],
+        previous_loans: data.previous_loans || [],
+        completed_loans: data.completed_loans || [],
+        applications: data.applications || [],
+        repayments: data.repayments || [],
+        outstanding_balance: data.outstanding_balance ?? 0,
+      })
       setForm({
         full_name: data.customer.full_name,
         phone_number: data.customer.phone_number,
+        email: data.customer.email || '',
         gender: data.customer.gender || '',
-        address: data.customer.address || '',
         amount: data.customer.amount ?? '',
         duration: data.customer.duration ?? '',
         status: data.customer.status,
+        registration_date: data.customer.registration_date || new Date().toISOString().slice(0, 10),
       })
     } catch (e) {
       setError(e.message)
@@ -300,11 +308,10 @@ function Customers() {
                     <th>Full Name</th>
                     <th>Phone</th>
                     <th>Gender</th>
-                    <th>Address</th>
                     <th>Amount</th>
                     <th>Period</th>
                     <th>Status</th>
-                    <th>Registered</th>
+                    <th>Date</th>
                     <th></th>
                   </tr>
               </thead>
@@ -315,7 +322,6 @@ function Customers() {
                     <td>{c.full_name}</td>
                     <td>{c.phone_number}</td>
                     <td>{c.gender || '-'}</td>
-                    <td>{c.address || '-'}</td>
                     <td>{formatCurrency(c.amount ?? 0)}</td>
                     <td>{c.duration ? `${c.duration} mo` : '-'}</td>
                     <td><StatusBadge status={c.status} /></td>
@@ -372,12 +378,12 @@ function Customers() {
                   <div className="value">{viewing.phone_number}</div>
                 </div>
                 <div>
-                  <div className="label">Gender</div>
+                  <div className="label">Email</div>
+                   <div className="value">{viewing.email || '-'}</div>
+                 </div>
+                 <div>
+                   <div className="label">Gender</div>
                   <div className="value">{viewing.gender || '-'}</div>
-                </div>
-                <div>
-                  <div className="label">Address</div>
-                  <div className="value">{viewing.address || '-'}</div>
                 </div>
                 <div>
                   <div className="label">Amount</div>
@@ -392,13 +398,34 @@ function Customers() {
                   <div className="value"><StatusBadge status={viewing.status} /></div>
                 </div>
                 <div>
-                  <div className="label">Registered</div>
+                  <div className="label">Date</div>
                   <div className="value">{formatDate(viewing.registration_date)}</div>
                 </div>
               </div>
 
+              <div className="admin-cards" style={{ marginTop: 20, marginBottom: 0 }}>
+                <div className="admin-card">
+                  <div className="admin-card-label">Current loan(s)</div>
+                  <div className="admin-card-value">{viewing.current_loans?.length || 0}</div>
+                </div>
+                <div className="admin-card">
+                  <div className="admin-card-label">Previous / closed loan(s)</div>
+                  <div className="admin-card-value">{viewing.previous_loans?.length || 0}</div>
+                </div>
+                <div className="admin-card">
+                  <div className="admin-card-label">Completed loan(s)</div>
+                  <div className="admin-card-value">{viewing.completed_loans?.length || 0}</div>
+                </div>
+                <div className="admin-card">
+                  <div className="admin-card-label">Outstanding balance</div>
+                  <div className="admin-card-value">
+                    {formatCurrency(viewing.outstanding_balance ?? 0)}
+                  </div>
+                </div>
+              </div>
+
               <h3 style={{ margin: '24px 0 12px' }}>Loan History</h3>
-              {viewing.loans?.length === 0 ? (
+              {!viewing.loans?.length ? (
                 <Empty message="No loans yet." />
               ) : (
                 <div className="admin-table-wrap">
@@ -432,6 +459,90 @@ function Customers() {
                           <td>{formatCurrency(l.amount_paid)}</td>
                           <td>{formatCurrency(l.outstanding_balance)}</td>
                           <td><StatusBadge status={l.status} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <h3 style={{ margin: '24px 0 12px' }}>Loan Application History</h3>
+              {!viewing.applications?.length ? (
+                <Empty message="No linked applications yet." />
+              ) : (
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Application</th>
+                        <th>Product</th>
+                        <th>Requested</th>
+                        <th>Approved</th>
+                        <th>Period</th>
+                        <th>Purpose / note</th>
+                        <th>Status</th>
+                        <th>Applied</th>
+                        <th>Decision</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {viewing.applications.map((application) => (
+                        <tr key={application.id}>
+                          <td>{application.application_id}</td>
+                          <td>{application.product_name || '-'}</td>
+                          <td>{formatCurrency(application.requested_amount ?? 0)}</td>
+                          <td>
+                            {application.approved_amount != null
+                              ? formatCurrency(application.approved_amount)
+                              : '-'}
+                          </td>
+                          <td>
+                            {application.approved_duration || application.requested_duration
+                              ? `${application.approved_duration || application.requested_duration} mo`
+                              : '-'}
+                          </td>
+                          <td>
+                            {[application.purpose, application.rejection_reason].filter(Boolean).join(' — ') || '-'}
+                          </td>
+                          <td><StatusBadge status={application.status} /></td>
+                          <td>{formatDate(application.application_date)}</td>
+                          <td>
+                            {application.approved_at || application.rejected_at
+                              ? formatDate(application.approved_at || application.rejected_at)
+                              : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <h3 style={{ margin: '24px 0 12px' }}>Repayment History</h3>
+              {!viewing.repayments?.length ? (
+                <Empty message="No repayments recorded yet." />
+              ) : (
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Repayment</th>
+                        <th>Loan</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Reference</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {viewing.repayments.map((repayment) => (
+                        <tr key={repayment.id}>
+                          <td>{repayment.repayment_id}</td>
+                          <td>{repayment.loan_reference || repayment.loan_id}</td>
+                          <td>{formatDate(repayment.payment_date)}</td>
+                          <td>{formatCurrency(repayment.amount)}</td>
+                          <td>{repayment.payment_method || '-'}</td>
+                          <td>{repayment.reference_number || '-'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -501,7 +612,16 @@ function Customers() {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Gender</label>
+                  <label>Email address</label>
+                   <input
+                     className="admin-input"
+                     type="email"
+                     value={form.email}
+                     onChange={(e) => change('email', e.target.value)}
+                   />
+                 </div>
+                 <div className="admin-form-group">
+                   <label>Gender</label>
                   <select
                     className="admin-select"
                     value={form.gender}
@@ -515,11 +635,13 @@ function Customers() {
                   </select>
                 </div>
                 <div className="admin-form-group">
-                  <label>Address</label>
+                  <label>Date</label>
                   <input
                     className="admin-input"
-                    value={form.address}
-                    onChange={(e) => change('address', e.target.value)}
+                    type="date"
+                    value={form.registration_date}
+                    onChange={(e) => change('registration_date', e.target.value)}
+                    required
                   />
                 </div>
                 <div className="admin-form-group">
@@ -591,7 +713,7 @@ function Customers() {
                 Upload a <strong>.xlsx</strong>, <strong>.xls</strong> or <strong>.csv</strong> file.
                 Expected columns:{' '}
                 <strong>
-                  Full Name, Phone, Gender, Email, Address, Amount, Period (max 6 months), Status,
+                  Full Name, Phone, Gender, Email, Amount, Period (max 6 months), Status,
                   Date Registered
                 </strong>
                 . Phones are saved with +250 (9 digits). If "Date Registered" is left empty, today's

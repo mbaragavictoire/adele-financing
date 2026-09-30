@@ -1,5 +1,15 @@
 const TOKEN_KEY = 'adele_lms_token'
 
+// When the frontend is hosted separately from the API (e.g. Vercel), set
+// VITE_API_URL to the public API origin. Leave it empty when both are served
+// from the same origin (local dev proxy or the API server itself).
+const API_ORIGIN = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
+
+export function apiUrl(path) {
+  const suffix = path.startsWith('/') ? path : `/${path}`
+  return `${API_ORIGIN}/api${suffix}`
+}
+
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY)
 }
@@ -20,7 +30,7 @@ export async function api(path, options = {}) {
   }
   if (token) headers.Authorization = `Bearer ${token}`
 
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(apiUrl(path), {
     ...options,
     headers,
     body: options.body ? JSON.stringify(options.body) : undefined,

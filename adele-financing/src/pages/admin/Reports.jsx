@@ -4,7 +4,7 @@ import { Empty, Loading } from '../../admin/ui.jsx'
 import { useAuth } from '../../admin/AuthContext.jsx'
 
 const TABS = [
-  { key: 'customers', label: 'Customers', path: '/reports/customers', cols: ['customer_id','registration_date','full_name','phone_number','gender','address','status'] },
+  { key: 'customers', label: 'Customers', path: '/reports/customers', cols: ['customer_id','registration_date','full_name','phone_number','gender','status'] },
   { key: 'applications', label: 'Applications', path: '/reports/applications', cols: ['application_id','customer_name','product_name','requested_amount','duration','status','application_date'] },
   { key: 'approved', label: 'Approved', path: '/reports/approved', cols: ['application_id','customer_name','approved_amount','approved_duration','interest_rate','approved_at'] },
   { key: 'rejected', label: 'Rejected', path: '/reports/rejected', cols: ['application_id','customer_name','requested_amount','rejection_reason','rejected_at'] },
@@ -19,9 +19,8 @@ const COLUMN_LABELS = {
   full_name: 'Full Name',
   phone_number: 'Phone',
   gender: 'Gender',
-  address: 'Address',
   status: 'Status',
-  registration_date: 'Registered',
+  registration_date: 'Date',
   application_id: 'Application',
   customer_name: 'Customer',
   product_name: 'Product',

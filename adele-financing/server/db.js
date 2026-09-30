@@ -52,6 +52,73 @@ async function migrate() {
     if (durRows.length === 0) {
       await run('ALTER TABLE customers ADD COLUMN duration INT NOT NULL DEFAULT 0')
     }
+    const addrRows = await queryAll(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'customers' AND COLUMN_NAME = 'address'`,
+    )
+    if (addrRows.length > 0) {
+      await run('ALTER TABLE customers DROP COLUMN address')
+    }
+    const appCustRows = await queryAll(
+      `SELECT IS_NULLABLE FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'loan_applications' AND COLUMN_NAME = 'customer_id'`,
+    )
+    if (appCustRows.length > 0 && String(appCustRows[0].IS_NULLABLE).toUpperCase() !== 'YES') {
+      await run('ALTER TABLE loan_applications MODIFY COLUMN customer_id INT NULL')
+    }
+    const appCols = await queryAll(
+      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'loan_applications'`,
+    )
+    const appHas = new Set(appCols.map((r) => r.COLUMN_NAME))
+    if (!appHas.has('applicant_first_name')) {
+      await run('ALTER TABLE loan_applications ADD COLUMN applicant_first_name VARCHAR(255)')
+    }
+    if (!appHas.has('applicant_last_name')) {
+      await run('ALTER TABLE loan_applications ADD COLUMN applicant_last_name VARCHAR(255)')
+    }
+    if (!appHas.has('applicant_email')) {
+      await run('ALTER TABLE loan_applications ADD COLUMN applicant_email VARCHAR(255)')
+    }
+    if (!appHas.has('applicant_phone')) {
+      await run('ALTER TABLE loan_applications ADD COLUMN applicant_phone VARCHAR(50)')
+    }
+
+    const customerEmailIndex = await queryAll(
+      `SELECT INDEX_NAME FROM information_schema.STATISTICS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'customers'
+         AND INDEX_NAME = 'uq_customers_email' LIMIT 1`,
+    )
+    if (customerEmailIndex.length === 0) {
+      const duplicateEmails = await queryAll(
+        `SELECT LOWER(email) AS email_key FROM customers
+         WHERE email IS NOT NULL AND TRIM(email) <> ''
+         GROUP BY LOWER(email) HAVING COUNT(*) > 1`,
+      )
+      if (duplicateEmails.length === 0) {
+        await run('ALTER TABLE customers ADD UNIQUE KEY uq_customers_email (email)')
+      } else {
+        console.warn('Skipping unique customer email index because duplicate emails already exist.')
+      }
+    }
+
+    const loanApplicationIndex = await queryAll(
+      `SELECT INDEX_NAME FROM information_schema.STATISTICS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'loans'
+         AND INDEX_NAME = 'uq_loans_application_id' LIMIT 1`,
+    )
+    if (loanApplicationIndex.length === 0) {
+      const duplicateLoans = await queryAll(
+        `SELECT application_id FROM loans
+         WHERE application_id IS NOT NULL
+         GROUP BY application_id HAVING COUNT(*) > 1`,
+      )
+      if (duplicateLoans.length === 0) {
+        await run('ALTER TABLE loans ADD UNIQUE KEY uq_loans_application_id (application_id)')
+      } else {
+        console.warn('Skipping unique loan application index because duplicate loans already exist.')
+      }
+    }
   } catch (e) {
     console.error('Migration failed:', e.message)
   }
@@ -68,21 +135,58 @@ function toArgs(sql, params) {
   return { sql: converted, values: names.map((k) => params[k]) }
 }
 
-export async function queryAll(sql, params) {
+async function queryAllWith(executor, sql, params) {
   const { sql: s, values } = toArgs(sql, params)
-  const [rows] = await pool.execute(s, values)
+  const [rows] = await executor.execute(s, values)
   return rows
 }
 
-export async function queryOne(sql, params) {
-  const rows = await queryAll(sql, params)
+async function queryOneWith(executor, sql, params) {
+  const rows = await queryAllWith(executor, sql, params)
   return rows[0]
 }
 
-export async function run(sql, params) {
+async function runWith(executor, sql, params) {
   const { sql: s, values } = toArgs(sql, params)
-  const [res] = await pool.execute(s, values)
+  const [res] = await executor.execute(s, values)
   return { lastInsertRowid: Number(res.insertId), changes: res.affectedRows }
+}
+
+export async function queryAll(sql, params) {
+  return queryAllWith(pool, sql, params)
+}
+
+export async function queryOne(sql, params) {
+  return queryOneWith(pool, sql, params)
+}
+
+export async function run(sql, params) {
+  return runWith(pool, sql, params)
+}
+
+export async function withTransaction(callback) {
+  if (!pool) throw new Error('Database is not initialized.')
+  const connection = await pool.getConnection()
+  try {
+    await connection.beginTransaction()
+    const tx = {
+      queryAll: (sql, params) => queryAllWith(connection, sql, params),
+      queryOne: (sql, params) => queryOneWith(connection, sql, params),
+      run: (sql, params) => runWith(connection, sql, params),
+    }
+    const result = await callback(tx)
+    await connection.commit()
+    return result
+  } catch (error) {
+    try {
+      await connection.rollback()
+    } catch {
+      // Preserve the original database error.
+    }
+    throw error
+  } finally {
+    connection.release()
+  }
 }
 
 const SCHEMA = `
@@ -110,11 +214,11 @@ const SCHEMA = `
     phone_number VARCHAR(50) NOT NULL,
     gender VARCHAR(20) NOT NULL DEFAULT '',
     email VARCHAR(255),
-    address TEXT,
     amount DOUBLE NOT NULL DEFAULT 0,
     duration INT NOT NULL DEFAULT 0,
     status VARCHAR(20) NOT NULL DEFAULT 'active',
-    registration_date DATE NOT NULL
+    registration_date DATE NOT NULL,
+    UNIQUE KEY uq_customers_email (email)
   );
 
   CREATE TABLE IF NOT EXISTS loan_products (
@@ -133,7 +237,11 @@ const SCHEMA = `
   CREATE TABLE IF NOT EXISTS loan_applications (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     application_id VARCHAR(20) NOT NULL UNIQUE,
-    customer_id INT NOT NULL,
+    customer_id INT,
+    applicant_first_name VARCHAR(255),
+    applicant_last_name VARCHAR(255),
+    applicant_email VARCHAR(255),
+    applicant_phone VARCHAR(50),
     loan_product_id INT NOT NULL,
     requested_amount DOUBLE NOT NULL,
     duration INT NOT NULL,
@@ -172,7 +280,8 @@ const SCHEMA = `
     disbursed_by INT,
     payment_method VARCHAR(50),
     reference_number VARCHAR(100),
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_loans_application_id (application_id)
   );
 
   CREATE TABLE IF NOT EXISTS repayment_schedules (

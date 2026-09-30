@@ -10,11 +10,28 @@ router.get('/summary', requireAuth, async (req, res) => {
     const quarter = parseQuarter(req.query.q, req.query.year)
     const { start, end } = quarter
 
-    const totalCustomers = Number((await queryOne('SELECT COUNT(*) AS c FROM customers')).c)
-    const activeLoans = Number(
-      (await queryOne("SELECT COUNT(DISTINCT customer_id) AS c FROM loans WHERE status = 'active'")).c,
+    const customerCounts = await queryOne(
+      `SELECT
+         COUNT(*) AS total,
+         SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active,
+         SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) AS inactive
+       FROM customers`,
     )
-    const inactiveLoans = totalCustomers - activeLoans
+    const loanCounts = await queryOne(
+      `SELECT
+         COUNT(*) AS total,
+         SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active,
+         SUM(CASE WHEN status <> 'active' THEN 1 ELSE 0 END) AS inactive,
+         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed
+       FROM loans`,
+    )
+    const totalCustomers = Number(customerCounts.total)
+    const activeCustomers = Number(customerCounts.active)
+    const inactiveCustomers = Number(customerCounts.inactive)
+    const totalLoans = Number(loanCounts.total)
+    const activeLoans = Number(loanCounts.active)
+    const inactiveLoans = Number(loanCounts.inactive)
+    const completedLoans = Number(loanCounts.completed)
     const pendingApplications = Number(
       (await queryOne("SELECT COUNT(*) AS c FROM loan_applications WHERE status IN ('pending','under_review')")).c,
     )
@@ -60,8 +77,12 @@ router.get('/summary', requireAuth, async (req, res) => {
     res.json({
       summary: {
         total_customers: totalCustomers,
+        active_customers: activeCustomers,
+        inactive_customers: inactiveCustomers,
+        total_loans: totalLoans,
         active_loans: activeLoans,
         inactive_loans: inactiveLoans,
+        completed_loans: completedLoans,
         pending_applications: pendingApplications,
         approved_loans: approvedLoans,
         approved_applications: approvedApplications,
@@ -118,11 +139,12 @@ router.get('/applications', requireAuth, async (req, res) => {
   try {
     const { clause, params } = dateFilter(req.query, 'la.application_date')
     const rows = await queryAll(
-      `SELECT la.application_id, c.full_name AS customer_name, lp.name AS product_name,
-              la.requested_amount, la.duration, la.status, la.application_date
-       FROM loan_applications la
-       JOIN customers c ON c.id = la.customer_id
-       JOIN loan_products lp ON lp.id = la.loan_product_id
+       `SELECT la.application_id, COALESCE(c.full_name, TRIM(CONCAT_WS(' ', la.applicant_first_name, la.applicant_last_name))) AS customer_name,
+               lp.name AS product_name,
+               la.requested_amount, la.duration, la.status, la.application_date
+        FROM loan_applications la
+        LEFT JOIN customers c ON c.id = la.customer_id
+        JOIN loan_products lp ON lp.id = la.loan_product_id
        WHERE 1=1 ${clause}
        ORDER BY la.application_date DESC`,
       params,
@@ -156,11 +178,11 @@ router.get('/approved', requireAuth, async (req, res) => {
   try {
     const { clause, params } = dateFilter(req.query, 'la.approved_at')
     const rows = await queryAll(
-      `SELECT la.application_id, c.full_name AS customer_name, la.approved_amount,
-              la.approved_duration, la.interest_rate, la.approved_at
-       FROM loan_applications la
-       JOIN customers c ON c.id = la.customer_id
-       WHERE la.status = 'approved' ${clause}
+       `SELECT la.application_id, COALESCE(c.full_name, TRIM(CONCAT_WS(' ', la.applicant_first_name, la.applicant_last_name))) AS customer_name,
+               la.approved_amount, la.approved_duration, la.interest_rate, la.approved_at
+        FROM loan_applications la
+        LEFT JOIN customers c ON c.id = la.customer_id
+        WHERE la.status = 'approved' ${clause}
        ORDER BY la.approved_at DESC`,
       params,
     )
@@ -174,11 +196,11 @@ router.get('/rejected', requireAuth, async (req, res) => {
   try {
     const { clause, params } = dateFilter(req.query, 'la.rejected_at')
     const rows = await queryAll(
-      `SELECT la.application_id, c.full_name AS customer_name, la.requested_amount,
-              la.rejection_reason, la.rejected_at
-       FROM loan_applications la
-       JOIN customers c ON c.id = la.customer_id
-       WHERE la.status = 'rejected' ${clause}
+       `SELECT la.application_id, COALESCE(c.full_name, TRIM(CONCAT_WS(' ', la.applicant_first_name, la.applicant_last_name))) AS customer_name,
+               la.requested_amount, la.rejection_reason, la.rejected_at
+        FROM loan_applications la
+        LEFT JOIN customers c ON c.id = la.customer_id
+        WHERE la.status = 'rejected' ${clause}
        ORDER BY la.rejected_at DESC`,
       params,
     )

@@ -6,8 +6,9 @@ export async function writeAudit({
   action,
   description,
   relatedRecord = null,
-}) {
-  await run(
+}, db = null) {
+  const execute = db?.run || run
+  await execute(
     `INSERT INTO audit_logs (user_id, user_name, action, description, related_record)
      VALUES (?, ?, ?, ?, ?)`,
     [userId, userName, action, description, relatedRecord],

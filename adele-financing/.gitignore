@@ -1,4 +1,4 @@
-# Logs
+﻿# Logs
 logs
 *.log
 npm-debug.log*
@@ -29,3 +29,6 @@ test-doc.pdf
 *.njsproj
 *.sln
 *.sw?
+
+# local credentials
+.env

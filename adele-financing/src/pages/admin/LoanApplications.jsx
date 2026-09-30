@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { api, apiGet, formatCurrency, formatDate, getToken } from '../../admin/api.js'
+import { api, apiGet, apiUrl, formatCurrency, formatDate, getToken } from '../../admin/api.js'
 import { StatusBadge, Empty, Loading } from '../../admin/ui.jsx'
 import { useAuth } from '../../admin/AuthContext.jsx'
 
@@ -113,7 +113,10 @@ function LoanApplications() {
           body: {
             approved_amount: Number(approveForm.approved_amount || action.requested_amount),
             approved_duration: Number(approveForm.approved_duration || action.duration),
-            interest_rate: Number(approveForm.interest_rate || action.interest_rate || 0),
+            interest_rate:
+              approveForm.interest_rate === '' || approveForm.interest_rate == null
+                ? action.interest_rate ?? undefined
+                : Number(approveForm.interest_rate),
           },
         })
       } else if (kind === 'reject') {
@@ -128,9 +131,10 @@ function LoanApplications() {
             application_id: action.id,
             payment_method: disburseForm.payment_method || 'Bank Transfer',
             reference_number: disburseForm.reference_number,
-            approved_amount: Number(
-              disburseForm.approved_amount || action.approved_amount || action.requested_amount,
-            ),
+            approved_amount:
+              disburseForm.approved_amount === '' || disburseForm.approved_amount == null
+                ? undefined
+                : Number(disburseForm.approved_amount),
             disbursement_date: disburseForm.disbursement_date || new Date().toISOString().slice(0, 10),
           },
         })
@@ -181,7 +185,7 @@ function LoanApplications() {
 
   async function downloadDoc(doc) {
     const token = getToken()
-    const res = await fetch(`/api/apply/documents/${doc.id}/file`, {
+    const res = await fetch(apiUrl(`/apply/documents/${doc.id}/file`), {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
     if (!res.ok) {
