@@ -1,7 +1,13 @@
-/* Home hero */
+/* ==========================================================================
+   Page-level composition: hero, cards, sections, forms.
+   Colours all come from the tokens in index.css so the palette stays in one
+   place. Transitions share the site's timing scale (250–400ms ease-out).
+   ========================================================================== */
+
+/* ---- Home hero ---- */
 .hero-home {
-  background: linear-gradient(135deg, var(--navy), var(--navy-dark));
-  color: #fff;
+  background: var(--navy);
+  color: var(--white);
   padding: 96px 0;
 }
 
@@ -13,7 +19,7 @@
 }
 
 .hero-home h1 {
-  color: #fff;
+  color: var(--white);
   font-size: 46px;
   margin-bottom: 18px;
 }
@@ -34,14 +40,25 @@
   flex-wrap: wrap;
 }
 
+/* Translucent panel over navy; gold numerals are the accent. */
 .hero-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: var(--radius);
   padding: 24px;
+  transition:
+    background-color var(--t-base) var(--ease),
+    border-color var(--t-base) var(--ease),
+    transform var(--t-base) var(--ease);
+}
+
+.hero-stats:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.26);
+  transform: translateY(-4px);
 }
 
 .hero-stat {
@@ -59,7 +76,9 @@
   color: rgba(255, 255, 255, 0.75);
 }
 
-/* Feature cards */
+/* ---- Cards (shared hover behaviour) ----
+   White surface, hairline border, minimal shadow. On hover the card rises 4px
+   and the shadow deepens slightly. */
 .features {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -67,16 +86,21 @@
 }
 
 .feature-card {
-  background: var(--bg);
+  background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 28px;
   box-shadow: var(--shadow);
-  transition: transform 0.2s;
+  transition:
+    transform var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease),
+    border-color var(--t-base) var(--ease);
 }
 
 .feature-card:hover {
   transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+  border-color: var(--border-strong);
 }
 
 .feature-icon {
@@ -86,15 +110,32 @@
   display: grid;
   place-items: center;
   font-size: 24px;
-  background: var(--bg-soft);
+  background: var(--blue-soft);
+  color: var(--blue);
   margin-bottom: 16px;
+  transition:
+    background-color var(--t-base) var(--ease),
+    color var(--t-base) var(--ease),
+    transform var(--t-base) var(--ease);
+}
+
+.feature-card:hover .feature-icon {
+  background: var(--navy);
+  color: var(--gold);
+  transform: scale(1.05);
 }
 
 .feature-card h3 {
   margin-bottom: 10px;
+  color: var(--navy);
 }
 
-/* Steps */
+.feature-card p {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ---- Steps ---- */
 .steps {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -104,32 +145,54 @@
 
 .step-card {
   position: relative;
-  background: var(--bg);
+  background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 32px 28px 28px;
   box-shadow: var(--shadow);
+  transition:
+    transform var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease),
+    border-color var(--t-base) var(--ease);
 }
 
-.step-num {
-  font-size: 40px;
-  font-weight: 800;
-  color: var(--teal);
-  opacity: 0.25;
-  line-height: 1;
-  margin-bottom: 12px;
+.step-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+  border-color: var(--border-strong);
 }
 
 .step-card h3 {
   margin-bottom: 8px;
+  color: var(--navy);
 }
 
-/* CTA band */
+.step-card p {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Gold check marks, softened so they read as decoration not content. */
+.step-num {
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--gold);
+  opacity: 0.55;
+  line-height: 1;
+  margin-bottom: 12px;
+  transition: opacity var(--t-base) var(--ease);
+}
+
+.step-card:hover .step-num {
+  opacity: 1;
+}
+
+/* ---- CTA band: the one deliberate dark break on the page ---- */
 .cta-band {
-  background: linear-gradient(rgba(9, 26, 48, 0.88), rgba(12, 130, 119, 0.88));
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-deep) 100%);
   background-size: cover;
   background-position: center;
-  color: #fff;
+  color: var(--white);
   text-align: center;
   padding: 80px 0;
 }
@@ -140,18 +203,18 @@
 }
 
 .cta-band h2 {
-  color: #fff;
+  color: var(--white);
   font-size: 34px;
   margin-bottom: 12px;
 }
 
 .cta-band p {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.88);
   max-width: 560px;
   margin: 0 auto 26px;
 }
 
-/* Grid helpers */
+/* ---- Grid helpers ---- */
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -163,18 +226,39 @@
   background: var(--bg-soft);
 }
 
-/* Services list */
+/* ---- Services ---- */
 .service-card {
   display: flex;
   gap: 20px;
-  background: var(--bg);
+  background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 28px;
   box-shadow: var(--shadow);
   margin-bottom: 20px;
+  transition:
+    transform var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease),
+    border-color var(--t-base) var(--ease);
 }
 
+.service-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+  border-color: var(--border-strong);
+}
+
+.service-card h3 {
+  margin-bottom: 6px;
+  color: var(--navy);
+}
+
+.service-card p {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Navy icon tile that fills with gold on hover. */
 .service-icon {
   width: 56px;
   height: 56px;
@@ -183,15 +267,21 @@
   display: grid;
   place-items: center;
   font-size: 26px;
-  background: var(--teal);
-  color: #fff;
+  background: var(--navy);
+  color: var(--white);
+  transition:
+    background-color var(--t-base) var(--ease),
+    color var(--t-base) var(--ease),
+    transform var(--t-base) var(--ease);
 }
 
-.service-card h3 {
-  margin-bottom: 6px;
+.service-card:hover .service-icon {
+  background: var(--gold);
+  color: var(--navy);
+  transform: scale(1.05);
 }
 
-/* Values */
+/* ---- Values ---- */
 .values {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -199,20 +289,36 @@
 }
 
 .value-card {
-  background: var(--bg);
+  background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 28px;
   text-align: center;
   box-shadow: var(--shadow);
+  transition:
+    transform var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease),
+    border-color var(--t-base) var(--ease);
+}
+
+.value-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+  border-color: var(--border-strong);
 }
 
 .value-card h3 {
   font-size: 20px;
   margin-bottom: 8px;
+  color: var(--navy);
 }
 
-/* Team section */
+.value-card p {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ---- Team ---- */
 .team-chairman {
   text-align: center;
   margin-bottom: 48px;
@@ -223,9 +329,18 @@
   height: 220px;
   border-radius: 50%;
   object-fit: cover;
-  border: 5px solid var(--teal);
-  box-shadow: var(--shadow);
+  border: 5px solid var(--white);
+  outline: 2px solid var(--gold);
+  box-shadow: var(--shadow-md);
   margin-bottom: 16px;
+  transition:
+    transform var(--t-slow) var(--ease),
+    box-shadow var(--t-slow) var(--ease);
+}
+
+.team-chairman-photo:hover {
+  transform: scale(1.03);
+  box-shadow: var(--shadow-lift);
 }
 
 .team-row {
@@ -237,24 +352,45 @@
 
 .team-member {
   text-align: center;
-  background: var(--bg);
+  background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 32px 24px;
   box-shadow: var(--shadow);
+  transition:
+    transform var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease),
+    border-color var(--t-base) var(--ease);
 }
 
+.team-member:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+  border-color: var(--border-strong);
+}
+
+/* The chairperson card is marked with a gold edge rather than a coloured fill. */
 .team-member.featured {
-  border-color: var(--teal);
-  box-shadow: 0 14px 40px rgba(15, 157, 143, 0.28);
+  border-color: var(--gold);
+  box-shadow: 0 14px 40px rgba(217, 164, 65, 0.22);
 }
 
+.team-member.featured:hover {
+  box-shadow: 0 18px 46px rgba(217, 164, 65, 0.32);
+}
+
+/* Portrait photos scale gently inside their circular frame. */
 .team-member-photo {
   width: 140px;
   height: 140px;
   border-radius: 50%;
   object-fit: cover;
   margin-bottom: 16px;
+  transition: transform var(--t-slow) var(--ease);
+}
+
+.team-member:hover .team-member-photo {
+  transform: scale(1.04);
 }
 
 .team-member.featured .team-member-photo {
@@ -263,22 +399,34 @@
 }
 
 .team-initials {
-  background: var(--teal);
-  color: #fff;
+  background: var(--navy);
+  color: var(--white);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 40px;
   font-weight: 700;
+  border-radius: 50%;
+  width: 140px;
+  height: 140px;
+  margin-bottom: 16px;
+  transition:
+    background-color var(--t-base) var(--ease),
+    transform var(--t-base) var(--ease);
+}
+
+.team-member:hover .team-initials {
+  background: var(--blue);
+  transform: scale(1.04);
 }
 
 .team-role {
-  color: var(--teal);
+  color: var(--gold-dark);
   font-weight: 600;
   margin-bottom: 0;
 }
 
-/* Chairperson message */
+/* ---- Chairperson message ---- */
 .chairperson-message-top {
   margin-top: 32px;
 }
@@ -288,9 +436,15 @@
   height: 200px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid var(--teal);
-  box-shadow: var(--shadow);
+  border: 3px solid var(--white);
+  outline: 2px solid var(--navy);
+  box-shadow: var(--shadow-md);
   margin-bottom: 12px;
+  transition: transform var(--t-slow) var(--ease);
+}
+
+.chairperson-message-photo:hover {
+  transform: scale(1.03);
 }
 
 .chairperson-message-text {
@@ -302,9 +456,10 @@
 
 .chairperson-message-text p {
   margin-bottom: 16px;
+  color: var(--text-muted);
 }
 
-/* Contact page */
+/* ---- Contact ---- */
 .contact-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -322,14 +477,22 @@
   height: 44px;
   flex-shrink: 0;
   border-radius: 10px;
-  background: var(--teal);
-  color: #fff;
+  background: var(--blue-soft);
+  color: var(--blue);
   display: grid;
   place-items: center;
   font-size: 20px;
+  transition:
+    background-color var(--t-base) var(--ease),
+    color var(--t-base) var(--ease);
 }
 
-/* Forms */
+.contact-info-item:hover .icon {
+  background: var(--navy);
+  color: var(--gold);
+}
+
+/* ---- Forms ---- */
 .form-group {
   margin-bottom: 18px;
 }
@@ -347,10 +510,21 @@
   width: 100%;
   padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 15px;
   font-family: var(--font);
-  background: var(--bg);
+  background: var(--white);
+  color: var(--text);
+  transition:
+    border-color var(--t-fast) var(--ease),
+    box-shadow var(--t-fast) var(--ease),
+    background-color var(--t-fast) var(--ease);
+}
+
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+  border-color: var(--border-strong);
 }
 
 .form-group input.has-error,
@@ -370,7 +544,7 @@
 
 .field-hint {
   display: block;
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 12px;
   margin-top: 6px;
 }
@@ -378,9 +552,9 @@
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-  outline: 2px solid var(--teal);
+  outline: 2px solid var(--blue);
   outline-offset: -1px;
-  border-color: transparent;
+  border-color: var(--blue);
 }
 
 .form-grid {
@@ -390,7 +564,7 @@
 }
 
 form {
-  background: var(--bg);
+  background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 32px;
@@ -398,41 +572,43 @@ form {
 }
 
 .form-note {
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
-  color: #065f46;
-  border-radius: 8px;
+  background: var(--gold-tint);
+  border: 1px solid var(--gold-light);
+  color: var(--navy);
+  border-radius: var(--radius-sm);
   padding: 14px 16px;
   margin-bottom: 20px;
   font-weight: 500;
 }
 
 .form-note-success {
-  background: linear-gradient(135deg, #ecfdf5, #f0fdfa);
-  border: 1px solid #6ee7b7;
+  background: var(--gold-tint);
+  border: 1px solid var(--gold);
   padding: 24px;
 }
 
 .form-note-success h3 {
   margin: 0 0 8px;
-  color: #065f46;
+  color: var(--navy);
 }
 
 .form-note-success p {
   margin: 4px 0;
-  color: #0f766e;
+  color: var(--text-muted);
 }
 
+/* The application reference is the one piece of gold in the success panel. */
 .form-note-success strong {
-  background: #065f46;
-  color: #fff;
+  background: var(--navy);
+  color: var(--white);
   padding: 2px 10px;
   border-radius: 6px;
   font-size: 15px;
   letter-spacing: 0.5px;
+  display: inline-block;
 }
 
-/* Apply page info strip */
+/* ---- Apply page info strip ---- */
 .apply-steps {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -441,11 +617,21 @@ form {
 }
 
 .apply-step {
-  background: var(--bg);
+  background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease),
+    border-color var(--t-base) var(--ease);
+}
+
+.apply-step:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+  border-color: var(--border-strong);
 }
 
 .apply-step h4 {
@@ -470,17 +656,20 @@ form {
   font-size: 12px;
   cursor: pointer;
   flex-shrink: 0;
+  transition:
+    background-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
 }
 
 .upload-list button:hover {
   background: #fecaca;
 }
 
-/* Document upload */
+/* ---- Document upload ---- */
 .upload-area {
   margin-bottom: 24px;
   padding: 20px;
-  border: 1px dashed var(--teal);
+  border: 1px dashed var(--blue);
   border-radius: var(--radius);
   background: var(--bg-soft);
 }
@@ -490,8 +679,8 @@ form {
   color: var(--navy);
   margin-bottom: 14px;
   padding: 10px 14px;
-  background: rgba(14, 37, 64, 0.06);
-  border-left: 4px solid var(--teal);
+  background: var(--blue-soft);
+  border-left: 4px solid var(--blue);
   border-radius: 6px;
 }
 
@@ -501,16 +690,21 @@ form {
   gap: 12px;
   justify-content: center;
   padding: 26px 20px;
-  border: 2px dashed var(--teal);
+  border: 2px dashed var(--blue);
   border-radius: var(--radius);
-  background: var(--bg);
+  background: var(--white);
   cursor: pointer;
   text-align: center;
-  transition: background 0.2s;
+  transition:
+    background-color var(--t-base) var(--ease),
+    border-color var(--t-base) var(--ease),
+    transform var(--t-base) var(--ease);
 }
 
 .upload-drop:hover {
-  background: #f0fdfa;
+  background: var(--blue-soft);
+  border-color: var(--navy);
+  transform: translateY(-2px);
 }
 
 .upload-drop input[type='file'] {
@@ -542,13 +736,18 @@ form {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--bg);
+  background: var(--white);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 8px 12px;
   margin-bottom: 6px;
   font-size: 14px;
   word-break: break-all;
+  transition: border-color var(--t-fast) var(--ease);
+}
+
+.upload-list li:hover {
+  border-color: var(--border-strong);
 }
 
 .upload-list li::before {
@@ -567,14 +766,24 @@ form {
   background: transparent;
 }
 
-/* Loan product cards */
+/* ---- Loan product cards ---- */
 .product-card {
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--bg);
+  background: var(--white);
   box-shadow: var(--shadow);
   margin-bottom: 16px;
   overflow: hidden;
+  transition:
+    transform var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease),
+    border-color var(--t-base) var(--ease);
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+  border-color: var(--border-strong);
 }
 
 .product-header {
@@ -588,6 +797,7 @@ form {
   cursor: pointer;
   font-family: var(--font);
   text-align: left;
+  transition: background-color var(--t-fast) var(--ease);
 }
 
 .product-header:hover {
@@ -602,8 +812,16 @@ form {
   display: grid;
   place-items: center;
   font-size: 22px;
-  background: var(--teal);
-  color: #fff;
+  background: var(--blue-soft);
+  color: var(--blue);
+  transition:
+    background-color var(--t-base) var(--ease),
+    color var(--t-base) var(--ease);
+}
+
+.product-header:hover .product-icon {
+  background: var(--navy);
+  color: var(--gold);
 }
 
 .product-title {
@@ -611,18 +829,25 @@ form {
   font-size: 19px;
   font-weight: 700;
   color: var(--navy);
+  transition: color var(--t-fast) var(--ease);
+}
+
+.product-header:hover .product-title {
+  color: var(--blue);
 }
 
 .product-chevron {
   flex-shrink: 0;
   font-size: 13px;
   font-weight: 600;
-  color: var(--teal);
+  color: var(--blue);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  transition: color var(--t-fast) var(--ease);
 }
 
 .product-header:hover .product-chevron {
+  color: var(--gold-dark);
   text-decoration: underline;
 }
 
@@ -639,12 +864,13 @@ form {
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: var(--teal);
+  color: var(--gold-dark);
   margin-bottom: 6px;
 }
 
 .product-section p {
   margin-bottom: 0;
+  color: var(--text-muted);
 }
 
 .product-section ul {
@@ -654,13 +880,14 @@ form {
 
 .product-section li {
   margin-bottom: 4px;
+  color: var(--text-muted);
 }
 
 .product-cta {
   margin-top: 20px;
 }
 
-/* Responsive */
+/* ---- Responsive ---- */
 @media (max-width: 1024px) {
   .features,
   .steps,

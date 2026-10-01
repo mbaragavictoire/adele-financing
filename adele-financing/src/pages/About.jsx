@@ -138,7 +138,7 @@ function About() {
       <section
         className="cta-band"
         style={{
-          backgroundImage: `linear-gradient(rgba(9, 26, 48, 0.88), rgba(12, 130, 119, 0.88)), url(${moneyBg})`,
+          backgroundImage: `linear-gradient(rgba(18, 59, 102, 0.9), rgba(12, 42, 75, 0.94)), url(${moneyBg})`,
         }}
       >
         <div className="container">

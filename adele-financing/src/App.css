@@ -8,20 +8,41 @@
   flex: 1;
 }
 
-/* ---- Navbar ---- */
+/* ---- Navbar ----
+   White by default so the logo and links read as a clean institutional bar.
+   On scroll it lifts on a translucent white field with a soft shadow, which
+   separates it from the page without introducing a second colour. */
 .navbar {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: var(--navy);
-  color: #fff;
+  background: var(--white);
+  border-bottom: 1px solid transparent;
+  box-shadow: none;
+  transition:
+    background-color var(--t-base) var(--ease),
+    box-shadow var(--t-base) var(--ease),
+    border-color var(--t-base) var(--ease);
+}
+
+.navbar.scrolled {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom-color: var(--border);
+  box-shadow: 0 6px 24px rgba(18, 59, 102, 0.09);
 }
 
 .navbar-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 68px;
+  height: 72px;
+  transition: height var(--t-base) var(--ease);
+}
+
+.navbar.scrolled .navbar-inner {
+  height: 64px;
 }
 
 .brand {
@@ -30,9 +51,14 @@
   gap: 10px;
   font-size: 20px;
   font-weight: 800;
-  color: #fff;
+  color: var(--navy);
   text-decoration: none;
   letter-spacing: 0.5px;
+  transition: color var(--t-fast) var(--ease);
+}
+
+.brand:hover {
+  color: var(--navy);
 }
 
 .brand-logo {
@@ -40,10 +66,15 @@
   width: auto;
   border-radius: 6px;
   display: block;
+  transition: transform var(--t-base) var(--ease);
+}
+
+.brand:hover .brand-logo {
+  transform: scale(1.03);
 }
 
 .brand span {
-  color: var(--gold);
+  color: var(--blue);
 }
 
 .nav-links {
@@ -53,49 +84,106 @@
 }
 
 .nav-links a {
-  color: rgba(255, 255, 255, 0.85);
+  position: relative;
+  color: var(--navy);
   text-decoration: none;
   font-weight: 500;
   font-size: 13.5px;
   letter-spacing: 0.2px;
-  transition: color 0.2s;
+  padding: 6px 0;
+  transition: color var(--t-fast) var(--ease);
 }
 
-.nav-links a:hover,
+/* Underline grows from the centre on hover and is present but softer when the
+   link is the current page. */
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform var(--t-base) var(--ease);
+}
+
+.nav-links a:hover {
+  color: var(--blue);
+}
+
+.nav-links a:hover::after {
+  transform: scaleX(1);
+}
+
 .nav-links a.active {
-  color: var(--gold);
+  color: var(--blue);
+}
+
+.nav-links a.active::after {
+  transform: scaleX(1);
+  background: var(--blue);
 }
 
 .nav-cta {
   margin-left: 8px;
   font-size: 13px;
-  padding: 8px 18px;
+  padding: 9px 18px;
+}
+
+/* The CTA has its own colour so the shared link rules must not draw a second
+   underline through it. */
+.nav-links a.nav-cta::after {
+  display: none;
 }
 
 .nav-staff-login {
-  background: #2f6df6;
-  border: 1px solid #2f6df6;
+  background: transparent;
+  border: 1px solid var(--navy);
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 7px 15px;
   font-size: 12.5px;
-  color: #fff;
+  color: var(--navy);
   font-weight: 600;
   letter-spacing: 0.2px;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease),
+    transform var(--t-fast) var(--ease);
+}
+
+.nav-staff-login::after {
+  display: none;
 }
 
 .nav-staff-login:hover {
-  background: #1e50c4;
-  color: #fff;
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--white);
+  transform: translateY(-1px);
+}
+
+.nav-links a.nav-staff-login.active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: var(--white);
 }
 
 .nav-toggle {
   display: none;
   background: none;
   border: none;
-  color: #fff;
+  color: var(--navy);
   font-size: 26px;
   cursor: pointer;
+  transition: color var(--t-fast) var(--ease);
+}
+
+.nav-toggle:hover {
+  color: var(--blue);
 }
 
 @media (max-width: 860px) {
@@ -105,39 +193,58 @@
 
   .nav-links {
     position: absolute;
-    top: 68px;
+    top: 72px;
     left: 0;
     right: 0;
     flex-direction: column;
     align-items: flex-start;
     gap: 0;
-    background: var(--navy-dark);
+    background: var(--white);
+    box-shadow: var(--shadow-md);
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease;
+    transition: max-height var(--t-slow) var(--ease);
+  }
+
+  .navbar.scrolled .nav-links {
+    top: 64px;
   }
 
   .nav-links.open {
-    max-height: calc(100vh - 68px);
+    max-height: calc(100vh - 72px);
     overflow-y: auto;
-    padding: 12px 24px;
+    padding: 12px 24px 20px;
   }
 
   .nav-links a {
     display: block;
     padding: 14px 0;
     width: 100%;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-links a::after {
+    display: none;
+  }
+
+  .nav-links a.active {
+    color: var(--blue);
+  }
+
+  .nav-staff-login {
+    margin-top: 14px;
+    text-align: center;
   }
 
   .nav-cta {
-    margin: 14px 0;
+    margin: 14px 0 0;
+    text-align: center;
   }
 }
 
 /* ---- Footer ---- */
 .footer {
-  background: var(--navy-dark);
+  background: var(--navy-deep);
   color: rgba(255, 255, 255, 0.75);
   padding: 48px 0 0;
 }
@@ -150,7 +257,7 @@
 }
 
 .footer h4 {
-  color: #fff;
+  color: var(--white);
   margin-bottom: 16px;
   font-size: 16px;
 }
@@ -171,11 +278,17 @@
   width: auto;
   border-radius: 6px;
   object-fit: contain;
+  transition: transform var(--t-base) var(--ease);
+}
+
+.footer-brand:hover .footer-logo {
+  transform: scale(1.03);
 }
 
 .footer p {
   margin: 0 0 12px;
   font-size: 14px;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .footer ul {
@@ -192,10 +305,12 @@
   color: rgba(255, 255, 255, 0.75);
   text-decoration: none;
   font-size: 14px;
+  transition: color var(--t-fast) var(--ease), padding-left var(--t-fast) var(--ease);
 }
 
 .footer ul a:hover {
   color: var(--gold);
+  padding-left: 4px;
 }
 
 .footer-bottom {

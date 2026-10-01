@@ -30,7 +30,7 @@ function Home() {
     <div
       className="home-bg"
       style={{
-        backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)), url(${moneyBg})`,
+        backgroundImage: `linear-gradient(rgba(246, 248, 251, 0.94), rgba(246, 248, 251, 0.94)), url(${moneyBg})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -87,7 +87,9 @@ economic growth.
       <section
         className="cta-band"
         style={{
-          backgroundImage: `linear-gradient(rgba(9, 26, 48, 0.88), rgba(12, 130, 119, 0.88)), url(${moneyBg})`,
+          // Navy overlay keeps the image legible and matches the one dark
+          // section in the page rhythm.
+          backgroundImage: `linear-gradient(rgba(18, 59, 102, 0.9), rgba(12, 42, 75, 0.94)), url(${moneyBg})`,
         }}
       >
         <div className="container">

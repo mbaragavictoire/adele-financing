@@ -1,12 +1,22 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Link } from 'react-router-dom'
 import logo from '../assets/adele-logo-hd.jpg'
 
 function Navbar() {
   const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  // Adds the shadowed, slightly translucent treatment once the page moves.
+  // Passive listener so scrolling is never blocked by this handler.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   return (
-    <header className="navbar">
+    <header className={`navbar ${scrolled ? 'scrolled' : ''}`}>
       <div className="container navbar-inner">
         <Link to="/" className="brand" onClick={() => setOpen(false)}>
           <img src={logo} alt="Adele Financing logo" className="brand-logo" />
