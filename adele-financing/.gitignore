@@ -32,3 +32,5 @@ test-doc.pdf
 
 # local credentials
 .env
+.env.*
+!.env.example

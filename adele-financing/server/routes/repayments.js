@@ -11,7 +11,11 @@ function httpError(statusCode, message) {
   return error
 }
 
-router.get('/', requireAuth, async (req, res) => {
+// Repayment records carry amounts, dates and bank references, so they are
+// restricted to the same roles as /api/reports/repayments. Previously this
+// listing was open to every authenticated user, which made that report's role
+// check decorative.
+router.get('/', requireAuth, requireRole('super_admin', 'finance_officer'), async (req, res) => {
   try {
     let sql = `
       SELECT r.*, c.full_name AS customer_name, l.loan_id

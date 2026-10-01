@@ -16,6 +16,7 @@ import LoanApplications from './pages/admin/LoanApplications'
 import LoanProductsPage from './pages/admin/LoanProducts'
 import Loans from './pages/admin/Loans'
 import Payments from './pages/admin/Payments'
+import Repayments from './pages/admin/Repayments'
 import Reports from './pages/admin/Reports'
 import Finance from './pages/admin/Finance'
 import Users from './pages/admin/Users'
@@ -53,6 +54,7 @@ function AppRoutes() {
         <Route path="loan-products" element={<LoanProductsPage />} />
         <Route path="loans" element={<Loans />} />
         <Route path="payments" element={<Payments />} />
+        <Route path="repayments" element={<Repayments />} />
         <Route path="reports" element={<Reports />} />
         <Route path="finance" element={<Finance />} />
         <Route path="users" element={<Users />} />

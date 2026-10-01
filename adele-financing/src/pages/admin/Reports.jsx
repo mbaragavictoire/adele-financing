@@ -14,6 +14,23 @@ const TABS = [
   { key: 'repayments', label: 'Repayments', path: '/reports/repayments', cols: ['repayment_id','customer_name','loan_id','amount','payment_date','payment_method','reference_number'] },
 ]
 
+// Neutralises HTML metacharacters so database content is rendered as text.
+// Needed because applicant names arrive from the anonymous public form.
+function escapeHtml(value) {
+  return String(value ?? '').replace(
+    /[&<>"'`]/g,
+    (c) =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+        '`': '&#96;',
+      })[c],
+  )
+}
+
 const COLUMN_LABELS = {
   customer_id: 'Customer ID',
   full_name: 'Full Name',
@@ -86,8 +103,14 @@ function Reports() {
   function printReport() {
     const win = window.open('', '_blank')
     if (!win) return
-    const head = `<h1>ADELE Financing — ${activeTab.label} Report</h1>`
-    const dateRange = from || to ? `<p>Period: ${from || 'start'} → ${to || 'today'}</p>` : ''
+    // Every value below originates from the database, and applicant names can be
+    // submitted by anonymous visitors through the public form. Escaping is what
+    // stops a crafted name from executing as script in this same-origin window.
+    const head = `<h1>ADELE Financing — ${escapeHtml(activeTab.label)} Report</h1>`
+    const dateRange =
+      from || to
+        ? `<p>Period: ${escapeHtml(from || 'start')} → ${escapeHtml(to || 'today')}</p>`
+        : ''
     const printCss = `
       @media print {
         @page { margin: 0; }
@@ -103,7 +126,9 @@ function Reports() {
     const table = `
       <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
         <thead>
-          <tr>${activeTab.cols.map((c) => `<th>${COLUMN_LABELS[c] || c}</th>`).join('')}</tr>
+          <tr>${activeTab.cols
+            .map((c) => `<th>${escapeHtml(COLUMN_LABELS[c] || c)}</th>`)
+            .join('')}</tr>
         </thead>
         <tbody>
           ${rows
@@ -118,7 +143,7 @@ function Reports() {
                     if (['registration_date','application_date','approved_at','rejected_at','start_date','due_date','payment_date'].includes(c)) {
                       v = formatDate(v)
                     }
-                    return `<td>${v ?? '-'}</td>`
+                    return `<td>${escapeHtml(v ?? '-')}</td>`
                   })
                   .join('')}
                 </tr>`,
@@ -127,7 +152,7 @@ function Reports() {
         </tbody>
       </table>`
     win.document.write(`
-      <html><head><title>${activeTab.label} Report</title>
+      <html><head><title>${escapeHtml(activeTab.label)} Report</title>
       <style>${printCss}</style></head>
       <body>${head}${dateRange}${table}
       <script>window.print()</script></body></html>`)
@@ -135,12 +160,15 @@ function Reports() {
   }
 
   function exportCsv() {
-    const header = activeTab.cols.map((c) => COLUMN_LABELS[c] || c).join(',')
-    const lines = rows.map((r) =>
-      activeTab.cols
-        .map((c) => `"${String(r[c] ?? '').replace(/"/g, '""')}"`)
-        .join(','),
-    )
+    // A leading =, +, -, @ or control char makes spreadsheet software treat the
+    // cell as a formula, so those values are prefixed with an apostrophe.
+    const csvCell = (raw) => {
+      let value = String(raw ?? '')
+      if (/^[=+\-@\t\r]/.test(value)) value = `'${value}`
+      return `"${value.replace(/"/g, '""')}"`
+    }
+    const header = activeTab.cols.map((c) => csvCell(COLUMN_LABELS[c] || c)).join(',')
+    const lines = rows.map((r) => activeTab.cols.map((c) => csvCell(r[c])).join(','))
     const csv = [header, ...lines].join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)

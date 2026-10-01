@@ -5,6 +5,13 @@ const TOKEN_KEY = 'adele_lms_token'
 // from the same origin (local dev proxy or the API server itself).
 const API_ORIGIN = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
 
+// Set by AuthContext so an expired or revoked session can clear the UI.
+// Declared here to avoid a circular import between the two modules.
+let sessionExpiredHandler = null
+export function setSessionExpiredHandler(handler) {
+  sessionExpiredHandler = handler
+}
+
 export function apiUrl(path) {
   const suffix = path.startsWith('/') ? path : `/${path}`
   return `${API_ORIGIN}/api${suffix}`
@@ -44,6 +51,11 @@ export async function api(path, options = {}) {
   }
 
   if (!res.ok) {
+    // A 401 can arrive on any request once the token expires or is revoked.
+    // Notifying the app here stops the UI from continuing to look signed in.
+    if (res.status === 401 && sessionExpiredHandler) {
+      sessionExpiredHandler(data?.error || 'Your session has ended. Please sign in again.')
+    }
     const error = new Error(data?.error || 'Request failed.')
     error.status = res.status
     error.data = data

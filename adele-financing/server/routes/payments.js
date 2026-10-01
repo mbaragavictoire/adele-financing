@@ -1,10 +1,11 @@
 import { Router } from 'express'
 import { queryAll } from '../db.js'
-import { requireAuth, handleError } from '../auth.js'
+import { requireAuth, requireRole, handleError } from '../auth.js'
 
 const router = Router()
 
-router.get('/', requireAuth, async (req, res) => {
+// Same rationale as /api/repayments: the transaction ledger is finance data.
+router.get('/', requireAuth, requireRole('super_admin', 'finance_officer', 'manager'), async (req, res) => {
   try {
     let sql = `
       SELECT p.*, c.full_name AS customer_name, l.loan_id

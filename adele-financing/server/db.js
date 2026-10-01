@@ -52,13 +52,9 @@ async function migrate() {
     if (durRows.length === 0) {
       await run('ALTER TABLE customers ADD COLUMN duration INT NOT NULL DEFAULT 0')
     }
-    const addrRows = await queryAll(
-      `SELECT COLUMN_NAME FROM information_schema.COLUMNS
-       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'customers' AND COLUMN_NAME = 'address'`,
-    )
-    if (addrRows.length > 0) {
-      await run('ALTER TABLE customers DROP COLUMN address')
-    }
+    // NOTE: a legacy step here used to DROP COLUMN customers.address on every
+    // boot, silently destroying existing customer addresses. Legacy columns are
+    // intentionally left in place; drop them only through a reviewed migration.
     const appCustRows = await queryAll(
       `SELECT IS_NULLABLE FROM information_schema.COLUMNS
        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'loan_applications' AND COLUMN_NAME = 'customer_id'`,
@@ -335,6 +331,24 @@ const SCHEMA = `
     value TEXT
   );
 
+  CREATE TABLE IF NOT EXISTS revoked_tokens (
+    id CHAR(36) NOT NULL PRIMARY KEY,
+    user_id INT,
+    expires_at DATETIME NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_revoked_expires (expires_at)
+  );
+
+  CREATE TABLE IF NOT EXISTS login_attempts (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    identifier VARCHAR(255),
+    ip VARCHAR(64),
+    successful TINYINT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_login_attempts_identifier (identifier, created_at),
+    KEY idx_login_attempts_created (created_at)
+  );
+
   CREATE TABLE IF NOT EXISTS incomes (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     income_id VARCHAR(20) NOT NULL UNIQUE,
@@ -376,26 +390,32 @@ async function countRows(table) {
 }
 
 async function seed() {
-  const seedPassword = process.env.SEED_ADMIN_PASSWORD || crypto.randomBytes(9).toString('base64url')
-  const passwordHash = bcrypt.hashSync(seedPassword, 10)
+  // Seed only the single super_admin account. Previously every seeded role
+  // shared one bcrypt hash, so compromising the weakest account revealed the
+  // super_admin password. Other roles must be created by a super_admin.
+  const seedPassword =
+    process.env.SEED_ADMIN_PASSWORD || crypto.randomBytes(18).toString('base64url')
+  const passwordHash = bcrypt.hashSync(seedPassword, 12)
 
   if ((await countRows('users')) === 0) {
     const stmt = `
       INSERT INTO users (full_name, email, phone, password_hash, role, status)
       VALUES (?, ?, ?, ?, ?, 'active')
     `
-    const users = [
-      ['System Administrator', 'adele1company@gmail.com', '+250 788 739 764', passwordHash, 'super_admin'],
-      ['Mukunde Densyse', 'densyse@adelefinancing.rw', '+250 788 000 001', passwordHash, 'loan_officer'],
-      ['Gahamanyi Edouard', 'edouard@adelefinancing.rw', '+250 788 000 002', passwordHash, 'manager'],
-      ['UWAMAHORO Divine', 'divine@adelefinancing.rw', '0738494008', passwordHash, 'finance_officer'],
-    ]
-    for (const u of users) {
-      await pool.execute(stmt, u)
-    }
+    await pool.execute(stmt, [
+      'System Administrator',
+      'adele1company@gmail.com',
+      '+250 788 739 764',
+      passwordHash,
+      'super_admin',
+    ])
     if (!process.env.SEED_ADMIN_PASSWORD) {
-      console.log(`[seed] SEED_ADMIN_PASSWORD not set. Generated admin password: ${seedPassword}`)
+      console.log(`[seed] Generated super_admin password: ${seedPassword}`)
     }
+    console.log(
+      '[seed] Only a super_admin was created. Add loan_officer / finance_officer / ' +
+        'manager accounts from Settings > Staff after signing in.',
+    )
   }
 
   if ((await countRows('roles')) === 0) {

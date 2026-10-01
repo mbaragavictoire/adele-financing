@@ -1,7 +1,18 @@
 import jwt from 'jsonwebtoken'
+import crypto from 'node:crypto'
+import { queryOne } from './db.js'
 
-export const JWT_SECRET =
-  process.env.JWT_SECRET || 'adele-finance-secret-change-in-production'
+// A missing or weak signing key would let anyone forge an admin token, so the
+// server refuses to boot instead of silently falling back to a known value.
+const RAW_SECRET = String(process.env.JWT_SECRET || '').trim()
+if (RAW_SECRET.length < 32) {
+  throw new Error(
+    'FATAL: JWT_SECRET must be set to at least 32 characters. Generate one with: ' +
+      'node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"',
+  )
+}
+
+export const JWT_SECRET = RAW_SECRET
 export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '8h'
 
 export function signToken(user) {
@@ -11,13 +22,15 @@ export function signToken(user) {
       name: user.full_name,
       email: user.email,
       role: user.role,
+      // Unique token id so an individual session can be revoked on logout.
+      jti: crypto.randomUUID(),
     },
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN },
   )
 }
 
-export function requireAuth(req, res, next) {
+export async function requireAuth(req, res, next) {
   const header = req.headers.authorization || ''
   const token = header.startsWith('Bearer ') ? header.slice(7) : null
 
@@ -25,12 +38,46 @@ export function requireAuth(req, res, next) {
     return res.status(401).json({ error: 'Authentication required.' })
   }
 
+  let payload
   try {
-    const payload = jwt.verify(token, JWT_SECRET)
-    req.user = payload
-    next()
+    payload = jwt.verify(token, JWT_SECRET)
   } catch {
     return res.status(401).json({ error: 'Invalid or expired session.' })
+  }
+
+  try {
+    // Revoked sessions (logout) stay unusable even before the token expires.
+    if (payload.jti) {
+      const revoked = await queryOne('SELECT id FROM revoked_tokens WHERE id = ? LIMIT 1', [
+        payload.jti,
+      ])
+      if (revoked) {
+        return res.status(401).json({ error: 'This session has been signed out.' })
+      }
+    }
+
+    // Re-read the account on every request. Trusting the role inside the token
+    // would keep a demoted or suspended user privileged until the token expired.
+    const user = await queryOne(
+      'SELECT id, full_name, email, role, status FROM users WHERE id = ?',
+      [payload.sub],
+    )
+    if (!user) {
+      return res.status(401).json({ error: 'Account not found.' })
+    }
+    if (user.status !== 'active') {
+      return res.status(403).json({ error: 'Your account is not active.' })
+    }
+
+    req.user = {
+      ...payload,
+      name: user.full_name,
+      email: user.email,
+      role: user.role,
+    }
+    next()
+  } catch (error) {
+    next(error)
   }
 }
 

@@ -5,7 +5,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
 import { queryAll, queryOne, run } from '../db.js'
-import { requireAuth, handleError } from '../auth.js'
+import { requireAuth, requireRole, handleError } from '../auth.js'
 import { writeAudit, genId, isValidRwPhone, rwPhoneFull } from '../utils.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -24,12 +24,33 @@ const upload = multer({
   }),
   limits: { fileSize: 10 * 1024 * 1024, files: 5 },
   fileFilter: (req, file, cb) => {
-    const ok =
-      file.mimetype === 'application/pdf' ||
-      file.originalname.toLowerCase().endsWith('.pdf')
+    // Both conditions are required. The previous OR let a client send
+    // Content-Type: text/html with a .pdf filename and have it accepted, then
+    // stored and later replayed from this origin as an HTML document.
+    const namedPdf = file.originalname.toLowerCase().endsWith('.pdf')
+    const ok = file.mimetype === 'application/pdf' && namedPdf
     cb(ok ? null : new Error('Only PDF documents are allowed.'), ok)
   },
 })
+
+/**
+ * Confirms the bytes on disk really are a PDF. The declared MIME type and
+ * filename are both client-controlled, so a .pdf holding HTML would otherwise
+ * pass every earlier check.
+ */
+async function assertRealPdf(filePath) {
+  let handle
+  try {
+    handle = await fs.promises.open(filePath, 'r')
+    const buffer = Buffer.alloc(5)
+    const { bytesRead } = await handle.read(buffer, 0, 5, 0)
+    return bytesRead === 5 && buffer.toString('latin1') === '%PDF-'
+  } catch {
+    return false
+  } finally {
+    await handle?.close()
+  }
+}
 
 const LOAN_TYPE_TO_PRODUCT = {
   personal: 'Personal Loan',
@@ -187,15 +208,40 @@ async function findProduct(loanType, amount) {
 
 async function saveDocuments(application_id, files) {
   if (!files || files.length === 0) return 0
+  const saved = []
   for (const f of files) {
+    if (!(await assertRealPdf(f.path))) {
+      // Not actually a PDF: remove the bytes so nothing unauthorised is stored.
+      await fs.promises.unlink(f.path).catch(() => {})
+      throw new Error('One of the uploaded files is not a valid PDF document.')
+    }
     await run(
       `INSERT INTO application_documents
         (application_id, file_name, file_path, mime_type, size)
        VALUES (?, ?, ?, ?, ?)`,
-      [application_id, f.originalname, f.path, f.mimetype, f.size],
+      // The stored MIME type is fixed rather than echoed from the request.
+      [application_id, f.originalname, f.path, 'application/pdf', f.size],
     )
+    saved.push(f)
   }
-  return files.length
+  return saved.length
+}
+
+/**
+ * Rejects markup and control characters in anonymous user input.
+ * @param {string} value
+ * @param {number} maxLength
+ * @param {boolean} [allowPunctuation] allow , . ; : ' ( ) / & ? ! % # + - _ @ for free-text
+ */
+function isSafeText(value, maxLength, allowPunctuation = false) {
+  const text = String(value ?? '')
+  if (!text || text.length > maxLength) return false
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001F\u007F<>]/.test(text)) return false
+  // Forward slash needs no escape inside a character class.
+  const punctuated = new RegExp('^[\\p{L}\\p{N}\\p{M} ,.;:\'()/&?!%#+@_-]+$', 'u')
+  const simple = /^[\p{L}\p{M} '-.]+$/u
+  return (allowPunctuation ? punctuated : simple).test(text)
 }
 
 // Public application submission (JSON or multipart with PDFs)
@@ -213,6 +259,15 @@ router.post('/', upload.array('documents', 5), async (req, res) => {
 
     if (!firstName || !lastName || !phoneValue) {
       return res.status(400).json({ error: 'First name, last name and phone number are required.' })
+    }
+    // This endpoint is anonymous and its input is later rendered inside the LMS
+    // (reports, print views, staff screens). Reject markup and control
+    // characters outright rather than trying to encode on the way out.
+    if (!isSafeText(firstName, 80) || !isSafeText(lastName, 80)) {
+      return res.status(400).json({ error: 'Names may only contain letters, spaces, hyphens and apostrophes.' })
+    }
+    if (message !== undefined && message !== null && !isSafeText(String(message), 2000, true)) {
+      return res.status(400).json({ error: 'Your message contains unsupported characters.' })
     }
     if (!isValidRwPhone(phoneValue)) {
       return res.status(400).json({ error: 'Please enter a valid 9-digit phone number.' })
@@ -283,7 +338,18 @@ router.post('/', upload.array('documents', 5), async (req, res) => {
       return res.status(500).json({ error: 'Could not allocate an application reference. Please try again.' })
     }
 
-    const docCount = await saveDocuments(application_id, req.files)
+    let docCount = 0
+    try {
+      docCount = await saveDocuments(application_id, req.files)
+    } catch (documentError) {
+      // Keep the application itself: staff can still review the request and ask
+      // for the documents again, and the rejected files are already deleted.
+      await writeAudit({
+        action: 'APPLICATION_DOCUMENT_REJECTED',
+        description: `Document rejected for application ${application_id}: ${documentError.message}`,
+        relatedRecord: `application:${application_id}`,
+      })
+    }
 
     await writeAudit({
       action: 'APPLICATION_CREATED',
@@ -302,8 +368,13 @@ router.post('/', upload.array('documents', 5), async (req, res) => {
   }
 })
 
+// Applicant identity documents contain national IDs and income evidence. Only
+// staff who already handle loan applications may list or download them;
+// finance staff have no business seeing this PII.
+const DOCUMENT_ROLES = ['super_admin', 'manager', 'loan_officer']
+
 // List documents for an application (staff only)
-router.get('/documents', requireAuth, async (req, res) => {
+router.get('/documents', requireAuth, requireRole(...DOCUMENT_ROLES), async (req, res) => {
   try {
     const application_id = req.query.application_id
     if (!application_id)
@@ -320,7 +391,7 @@ router.get('/documents', requireAuth, async (req, res) => {
 })
 
 // Download a document (staff only)
-router.get('/documents/:id/file', requireAuth, async (req, res) => {
+router.get('/documents/:id/file', requireAuth, requireRole(...DOCUMENT_ROLES), async (req, res) => {
   try {
     const doc = await queryOne(
       'SELECT * FROM application_documents WHERE id = ?',
@@ -328,16 +399,26 @@ router.get('/documents/:id/file', requireAuth, async (req, res) => {
     )
     if (!doc) return res.status(404).json({ error: 'Document not found.' })
 
-    if (!fs.existsSync(doc.file_path)) {
+    // Defence in depth: never stream a path that escapes the upload directory,
+    // even if a stored path were ever tampered with.
+    const resolved = path.resolve(doc.file_path)
+    if (!resolved.startsWith(path.resolve(UPLOAD_DIR) + path.sep)) {
+      return res.status(400).json({ error: 'Invalid document path.' })
+    }
+
+    if (!fs.existsSync(resolved)) {
       return res.status(404).json({ error: 'File is missing on the server.' })
     }
 
-    res.setHeader('Content-Type', doc.mime_type || 'application/pdf')
-    res.setHeader(
-      'Content-Disposition',
-      `inline; filename="${encodeURIComponent(doc.file_name)}"`,
-    )
-    fs.createReadStream(doc.file_path).pipe(res)
+    // Never trust the stored MIME type: it came from the uploader's multipart
+    // headers. Serving an attacker-supplied text/html inline would execute in
+    // the app origin, so the response type is fixed and the file is an
+    // attachment with scripting disabled.
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox")
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(doc.file_name)}"`)
+    fs.createReadStream(resolved).pipe(res)
   } catch (e) {
     handleError(res, e)
   }
