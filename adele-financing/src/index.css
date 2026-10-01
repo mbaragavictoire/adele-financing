@@ -371,6 +371,8 @@ section {
   .chairperson-message-photo:hover,
   .apply-step:hover,
   .upload-drop:hover,
+  .upload-example-frame:hover,
+  .upload-example-frame:hover .upload-example-img,
   .product-card:hover {
     transform: none !important;
   }

@@ -1,4 +1,5 @@
 import moneyBg from '../assets/money-bg.jpg'
+import ambientBg from '../assets/adele-ambient-1.jpg'
 import '../pages.css'
 
 const services = [
@@ -26,7 +27,16 @@ function Services() {
         backgroundRepeat: 'no-repeat',
       }}
     >
-      <section className="page-head">
+      <section
+        className="page-head"
+        style={{
+          // Same navy wash used on the closing call-to-action: the photo adds
+          // texture behind the heading while the text stays fully legible.
+          backgroundImage: `linear-gradient(rgba(18, 59, 102, 0.9), rgba(12, 42, 75, 0.94)), url(${ambientBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
         <div className="container">
           <h1>Other Services</h1>
           <p>

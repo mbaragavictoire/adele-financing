@@ -3,6 +3,7 @@ import '../pages.css'
 import { PhoneInput } from '../admin/ui.jsx'
 import { isValidRwPhone, rwPhoneFull } from '../admin/phone.js'
 import { apiUrl } from '../admin/api.js'
+import chequeExample from '../assets/adele-cheque.jpg'
 
 const initialForm = {
   first: '',
@@ -305,37 +306,53 @@ function Apply() {
               <div className="upload-note">
                 Upload file based on your loan type
               </div>
-              <label htmlFor="documents" className="upload-drop">
-                <input
-                  id="documents"
-                  name="documents"
-                  type="file"
-                  accept=".pdf"
-                  multiple
-                  onChange={handleFiles}
-                />
-                <span className="upload-icon">📎</span>
-                <span>
-                  Click to choose your PDF documents
-                  <small>National ID, income proof, business documents, etc.</small>
-                </span>
-              </label>
-              {files.length > 0 && (
-                <ul className="upload-list">
-                  {files.map((f, i) => (
-                    <li key={i}>
-                      {f.name}{' '}
-                      <em>({(f.size / 1024).toFixed(1)} KB)</em>
-                      <button
-                        type="button"
-                        onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}
-                      >
-                        Remove
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <div className="upload-body">
+                <div className="upload-main">
+                  <label htmlFor="documents" className="upload-drop">
+                    <input
+                      id="documents"
+                      name="documents"
+                      type="file"
+                      accept=".pdf"
+                      multiple
+                      onChange={handleFiles}
+                    />
+                    <span className="upload-icon">📎</span>
+                    <span>
+                      Click to choose your PDF documents
+                      <small>National ID, income proof, business documents, etc.</small>
+                    </span>
+                  </label>
+                  {files.length > 0 && (
+                    <ul className="upload-list">
+                      {files.map((f, i) => (
+                        <li key={i}>
+                          {f.name}{' '}
+                          <em>({(f.size / 1024).toFixed(1)} KB)</em>
+                          <button
+                            type="button"
+                            onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                          >
+                            Remove
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <figure className="upload-example">
+                  <div className="upload-example-frame">
+                    <img
+                      src={chequeExample}
+                      alt="Example of a bank cheque"
+                      className="upload-example-img"
+                      loading="lazy"
+                    />
+                  </div>
+                  <figcaption>Bank cheque</figcaption>
+                </figure>
+              </div>
             </div>
 
             <div className="form-group">
