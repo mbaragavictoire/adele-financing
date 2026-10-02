@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { api, apiGet, apiUrl, formatCurrency, formatDate, getToken } from '../../admin/api.js'
+import { api, apiGet, apiUrl, formatCurrency, formatDate, CREDENTIALS } from '../../admin/api.js'
 import { StatusBadge, Empty, Loading } from '../../admin/ui.jsx'
 import { useAuth } from '../../admin/AuthContext.jsx'
 
@@ -184,9 +184,10 @@ function LoanApplications() {
   }
 
   async function downloadDoc(doc) {
-    const token = getToken()
+    // No Authorization header: the HttpOnly session cookie is attached by the
+    // browser, which is why credentials must be set explicitly here.
     const res = await fetch(apiUrl(`/apply/documents/${doc.id}/file`), {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      credentials: CREDENTIALS,
     })
     if (!res.ok) {
       throw new Error('Download failed.')

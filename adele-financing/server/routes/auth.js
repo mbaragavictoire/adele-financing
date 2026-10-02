@@ -1,7 +1,16 @@
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import { queryOne, run } from '../db.js'
-import { signToken, requireAuth } from '../auth.js'
+import { requireAuth } from '../auth.js'
+import {
+  createSession,
+  setSessionCookie,
+  clearSessionCookie,
+  readSessionCookie,
+  revokeSession,
+  revokeUserSessions,
+  sessionPolicy,
+} from '../session.js'
 import { writeAudit } from '../utils.js'
 import {
   loginRateLimit,
@@ -66,16 +75,30 @@ router.post('/login', loginRateLimit({ windowMinutes: 15, maxAttempts: 5 }), asy
     await recordLoginAttempt(identifier, ip, true)
     await clearLoginFailures(identifier, ip)
 
-    const token = signToken(user)
+    // A fresh identifier is minted for every successful sign-in and sent only
+    // as an HttpOnly cookie. Nothing about the user, the role or the password
+    // travels to the browser, so there is nothing in the client to tamper with.
+    const session = await createSession({ userId: user.id, req })
+    setSessionCookie(res, session.rawIdentifier)
+
     await writeAudit({
       userId: user.id,
       userName: user.full_name,
       action: 'LOGIN',
-      description: 'User logged in',
+      description: `User logged in${session.evicted.length ? ` (closed ${session.evicted.length} older session(s) to stay within the simultaneous session limit)` : ''}`,
       relatedRecord: `user:${user.id}`,
     })
 
-    res.json({ token, user: publicUser(user) })
+    // Note the absence of a token in this payload: the browser's only credential
+    // is the cookie the server just set.
+    res.json({
+      user: publicUser(user),
+      session: {
+        idleMinutes: sessionPolicy().idleMinutes,
+        absoluteHours: sessionPolicy().absoluteHours,
+        maxSessionsPerUser: sessionPolicy().maxSessionsPerUser,
+      },
+    })
   } catch (e) {
     console.error(e)
     res.status(500).json({ error: 'An unexpected error occurred.' })
@@ -84,40 +107,59 @@ router.post('/login', loginRateLimit({ windowMinutes: 15, maxAttempts: 5 }), asy
 
 router.get('/me', requireAuth, async (req, res) => {
   try {
-    const row = await queryOne('SELECT * FROM users WHERE id = ?', [req.user.sub])
+    const row = await queryOne('SELECT * FROM users WHERE id = ?', [req.user.id])
     if (!row) return res.status(401).json({ error: 'Account not found.' })
-    res.json({ user: publicUser(row) })
+    // The session's own limits are returned so the UI can tell the user when
+    // they will be asked to sign in again.
+    res.json({
+      user: publicUser(row),
+      session: {
+        startedAt: req.session.createdAt,
+        lastSeenAt: req.session.lastSeenAt,
+        idleExpiresAt: req.session.idleExpiresAt,
+        absoluteExpiresAt: req.session.absoluteExpiresAt,
+        policy: sessionPolicy(),
+      },
+    })
   } catch (e) {
     console.error(e)
     res.status(500).json({ error: 'An unexpected error occurred.' })
   }
 })
 
+/**
+ * Ends the current session. The row is closed server-side, so the cookie that
+ * was captured beforehand is dead too, and the cookie itself is cleared.
+ */
 router.post('/logout', requireAuth, async (req, res) => {
   try {
-    // Revoke this specific token so a copied JWT stops working immediately,
-    // instead of remaining valid until its natural expiry.
-    if (req.user.jti) {
-      await run(
-        'INSERT IGNORE INTO revoked_tokens (id, user_id, expires_at) VALUES (?, ?, ?)',
-        [req.user.jti, req.user.sub, new Date(Date.now() + 9 * 60 * 60 * 1000)],
-      )
-    }
+    const rawIdentifier = readSessionCookie(req)
+    await revokeSession(rawIdentifier, { reason: 'Signed out by the user' })
+
     await writeAudit({
-      userId: req.user.sub,
+      userId: req.user.id,
       userName: req.user.name,
       action: 'LOGOUT',
       description: 'User logged out',
+      relatedRecord: `session:${String(req.session.id).slice(0, 12)}`,
     })
+
+    clearSessionCookie(res)
     res.json({ message: 'Logged out.' })
   } catch (e) {
     console.error(e)
+    // The cookie is cleared regardless, so the browser stops presenting it.
+    clearSessionCookie(res)
     res.status(500).json({ error: 'An unexpected error occurred.' })
   }
 })
 
-// Signed-out sessions must not be usable again, so the frontend is told to drop
-// its stored copy of the token.
+/**
+ * Changing a password ends every session on the account, including this one.
+ * That is the safe reading of "require fresh authentication": keeping the
+ * current session alive would leave a stolen session usable after the owner
+ * reacted to the compromise by changing their password.
+ */
 router.post('/change-password', requireAuth, async (req, res) => {
   try {
     const current_password = String(req.body?.current_password || '')
@@ -130,11 +172,11 @@ router.post('/change-password', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'New password must be at least 12 characters.' })
     }
 
-    const row = await queryOne('SELECT password_hash FROM users WHERE id = ?', [req.user.sub])
+    const row = await queryOne('SELECT password_hash FROM users WHERE id = ?', [req.user.id])
     const valid = await bcrypt.compare(current_password, row?.password_hash || DUMMY_HASH)
     if (!row || !valid) {
       await writeAudit({
-        userId: req.user.sub,
+        userId: req.user.id,
         userName: req.user.name,
         action: 'PASSWORD_CHANGE_FAILED',
         description: 'Change-password rejected: current password did not match',
@@ -144,25 +186,26 @@ router.post('/change-password', requireAuth, async (req, res) => {
 
     await run('UPDATE users SET password_hash = ? WHERE id = ?', [
       bcrypt.hashSync(new_password, 12),
-      req.user.sub,
+      req.user.id,
     ])
 
-    // Changing a password ends every other session for that account.
-    await run(
-      `INSERT IGNORE INTO revoked_tokens (id, user_id, expires_at)
-       SELECT UUID(), id, DATE_ADD(NOW(), INTERVAL 9 HOUR) FROM users WHERE id = ?`,
-      [req.user.sub],
-    )
-
-    await writeAudit({
-      userId: req.user.sub,
-      userName: req.user.name,
-      action: 'PASSWORD_CHANGED',
-      description: 'User changed their own password',
-      relatedRecord: `user:${req.user.sub}`,
+    const closedSessions = await revokeUserSessions(req.user.id, {
+      reason: 'Password changed',
     })
 
-    res.json({ message: 'Password updated. Please sign in again.' })
+    await writeAudit({
+      userId: req.user.id,
+      userName: req.user.name,
+      action: 'PASSWORD_CHANGED',
+      description: `User changed their own password; ${closedSessions} session(s) closed`,
+      relatedRecord: `user:${req.user.id}`,
+    })
+
+    clearSessionCookie(res)
+    res.json({
+      message: 'Password updated. Please sign in again.',
+      sessionsClosed: closedSessions,
+    })
   } catch (e) {
     console.error(e)
     res.status(500).json({ error: 'An unexpected error occurred.' })

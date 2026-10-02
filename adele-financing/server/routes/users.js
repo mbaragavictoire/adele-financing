@@ -2,6 +2,7 @@ import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import { queryAll, queryOne, run } from '../db.js'
 import { requireAuth, requireRole, handleError } from '../auth.js'
+import { revokeUserSessions } from '../session.js'
 import { writeAudit, isValidRwPhone, rwPhoneFull } from '../utils.js'
 
 const router = Router()
@@ -117,11 +118,40 @@ router.put('/:id', requireAuth, requireRole('super_admin'), async (req, res) => 
     )
 
     if (password) {
-      if (String(password).length < 6) {
-        return res.status(400).json({ error: 'Password must be at least 6 characters.' })
+      if (String(password).length < 12) {
+        return res
+          .status(400)
+          .json({ error: 'Password must be at least 12 characters.' })
       }
-      const password_hash = bcrypt.hashSync(String(password), 10)
+      const password_hash = bcrypt.hashSync(String(password), 12)
       await run('UPDATE users SET password_hash = ? WHERE id = ?', [password_hash, req.params.id])
+
+      // An administrator resetting a password must not leave whoever prompted
+      // the reset still signed in. Every session on that account is closed, so
+      // the holder has to authenticate with the new password.
+      const closed = await revokeUserSessions(existing.id, {
+        reason: 'Password reset by a Super Admin',
+        revokedBy: req.user.id,
+      })
+      await writeAudit({
+        userId: req.user.id,
+        userName: req.user.name,
+        action: 'PASSWORD_RESET',
+        description: `Reset the password for ${existing.email}; ${closed} session(s) closed`,
+        relatedRecord: `user:${existing.id}`,
+      })
+    }
+
+    // Suspending or deactivating an account must also end it immediately, not at
+    // the end of the session's lifetime.
+    if (existing.status !== updated.status || existing.role !== updated.role) {
+      await revokeUserSessions(existing.id, {
+        reason:
+          existing.status !== updated.status && updated.status !== 'active'
+            ? 'Account status changed'
+            : 'Role changed',
+        revokedBy: req.user.id,
+      })
     }
 
     await writeAudit({

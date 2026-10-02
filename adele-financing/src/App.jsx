@@ -22,6 +22,7 @@ import Finance from './pages/admin/Finance'
 import Users from './pages/admin/Users'
 import Settings from './pages/admin/Settings'
 import AuditLogs from './pages/admin/AuditLogs'
+import Sessions from './pages/admin/Sessions'
 import './App.css'
 
 function AppRoutes() {
@@ -60,6 +61,7 @@ function AppRoutes() {
         <Route path="users" element={<Users />} />
         <Route path="settings" element={<Settings />} />
         <Route path="audit-logs" element={<AuditLogs />} />
+        <Route path="sessions" element={<Sessions />} />
       </Route>
     </Routes>
   )

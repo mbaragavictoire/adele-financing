@@ -9,6 +9,8 @@
     "dev:api": "node server/index.js",
     "build": "vite build",
     "lint": "eslint .",
+    "check:server": "node scripts/check-server-imports.mjs",
+    "verify:sessions": "node scripts/verify-sessions.mjs",
     "preview": "vite preview",
     "start": "node server/index.js"
   },
@@ -17,7 +19,6 @@
     "cors": "^2.8.6",
     "dotenv": "^18.0.3",
     "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
     "multer": "^2.3.0",
     "mysql2": "^3.24.4",
     "react": "^19.2.8",

@@ -1,9 +1,14 @@
-const TOKEN_KEY = 'adele_lms_token'
-
 // When the frontend is hosted separately from the API (e.g. Vercel), set
 // VITE_API_URL to the public API origin. Leave it empty when both are served
 // from the same origin (local dev proxy or the API server itself).
 const API_ORIGIN = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
+
+// The signed-in staff member is identified by an HttpOnly session cookie that
+// the browser attaches on its own. There is deliberately no token in
+// localStorage or sessionStorage: script cannot read an HttpOnly cookie, so a
+// cross-site-script injection cannot steal the session the way it could steal a
+// stored bearer token. 'include' is what makes the browser send the cookie.
+export const CREDENTIALS = 'include'
 
 // Set by AuthContext so an expired or revoked session can clear the UI.
 // Declared here to avoid a circular import between the two modules.
@@ -17,28 +22,29 @@ export function apiUrl(path) {
   return `${API_ORIGIN}/api${suffix}`
 }
 
-export function getToken() {
-  return localStorage.getItem(TOKEN_KEY)
-}
-
-export function setToken(token) {
-  localStorage.setItem(TOKEN_KEY, token)
-}
-
-export function clearToken() {
-  localStorage.removeItem(TOKEN_KEY)
+/**
+ * Clears the JWT left behind by the previous authentication scheme. Sessions are
+ * now server-side and HttpOnly, so any leftover value is dead weight that would
+ * only mislead a future reader into thinking tokens are still in use.
+ */
+export function purgeLegacyToken() {
+  try {
+    localStorage.removeItem('adele_lms_token')
+    sessionStorage.removeItem('adele_lms_token')
+  } catch {
+    // Private-mode browsers can refuse storage access. Nothing depends on it.
+  }
 }
 
 export async function api(path, options = {}) {
-  const token = getToken()
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
   }
-  if (token) headers.Authorization = `Bearer ${token}`
 
   const res = await fetch(apiUrl(path), {
     ...options,
+    credentials: CREDENTIALS,
     headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
   })
@@ -51,8 +57,9 @@ export async function api(path, options = {}) {
   }
 
   if (!res.ok) {
-    // A 401 can arrive on any request once the token expires or is revoked.
-    // Notifying the app here stops the UI from continuing to look signed in.
+    // A 401 can arrive on any request once the session has expired, been
+    // revoked, or been timed out. Notifying the app here stops the UI from
+    // continuing to look signed in.
     if (res.status === 401 && sessionExpiredHandler) {
       sessionExpiredHandler(data?.error || 'Your session has ended. Please sign in again.')
     }
@@ -103,6 +110,7 @@ export const ADMIN_NAVIGATION = [
   { to: '/admin/reports', label: 'Reports', icon: '📈' },
   { to: '/admin/finance', label: 'Finance', icon: '💹' },
   { to: '/admin/users', label: 'Staff / Users', icon: '🛡️' },
+  { to: '/admin/sessions', label: 'Sessions', icon: '🔐' },
   { to: '/admin/settings', label: 'Settings', icon: '⚙️' },
   { to: '/admin/audit-logs', label: 'Audit Logs', icon: '📋' },
 ]

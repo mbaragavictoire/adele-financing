@@ -339,6 +339,26 @@ const SCHEMA = `
     KEY idx_revoked_expires (expires_at)
   );
 
+  -- Server-side sessions. The id column is the SHA-256 hash of the cookie value,
+  -- never the cookie value itself, so a database leak yields nothing replayable.
+  -- idle_expires_at slides forward with activity; absolute_expires_at never does.
+  CREATE TABLE IF NOT EXISTS sessions (
+    id CHAR(64) NOT NULL PRIMARY KEY,
+    user_id INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    absolute_expires_at DATETIME NOT NULL,
+    idle_expires_at DATETIME NOT NULL,
+    revoked_at DATETIME,
+    revoked_by INT,
+    revoke_reason VARCHAR(255),
+    ip VARCHAR(64),
+    user_agent VARCHAR(255),
+    KEY idx_sessions_user (user_id, revoked_at),
+    KEY idx_sessions_live (revoked_at, absolute_expires_at, idle_expires_at),
+    KEY idx_sessions_revoked_at (revoked_at)
+  );
+
   CREATE TABLE IF NOT EXISTS login_attempts (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     identifier VARCHAR(255),

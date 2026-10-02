@@ -7,12 +7,21 @@ import path from 'node:path'
 import { initDb } from './db.js'
 import { securityHeaders } from './security.js'
 import { maybePruneLoginAttempts } from './rateLimit.js'
+import { pruneSessions } from './session.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 await initDb()
 maybePruneLoginAttempts()
 setInterval(maybePruneLoginAttempts, 60 * 60 * 1000).unref()
+
+// Expired sessions are also closed lazily on the request that notices them, but
+// this keeps the admin session list honest about sessions nobody has retried.
+pruneSessions().catch((e) => console.error('session prune failed:', e.message))
+setInterval(
+  () => pruneSessions().catch((e) => console.error('session prune failed:', e.message)),
+  60 * 60 * 1000,
+).unref()
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -39,10 +48,41 @@ app.use(
       callback(null, ALLOWED_ORIGINS.includes(origin))
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type'],
     maxAge: 600,
   }),
 )
+
+// Sessions now travel in a cookie, which the browser attaches automatically.
+// That removes the need for a bearer token but introduces cross-site request
+// forgery, so every state-changing API call must come from this origin.
+//
+// SameSite=strict is the primary defence. This is the backstop for the cases it
+// cannot cover. Comparing against the request's own Host header rather than a
+// configured allowlist means it keeps working behind a tunnel or any hostname
+// without needing that hostname hard-coded.
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
+app.use('/api', (req, res, next) => {
+  if (SAFE_METHODS.has(req.method)) return next()
+
+  const origin = req.headers.origin
+  // Absent Origin means a non-browser client (curl, a server-to-server call).
+  // Those are not forgeable by a web page, and requiring the header would break
+  // legitimate tooling.
+  if (!origin) return next()
+
+  let originHost
+  try {
+    originHost = new URL(origin).host
+  } catch {
+    return res.status(403).json({ error: 'Request origin could not be verified.' })
+  }
+
+  if (originHost !== req.headers.host) {
+    return res.status(403).json({ error: 'Cross-site request refused.' })
+  }
+  next()
+})
 
 // Explicit body cap. The public upload route uses multipart and is limited by
 // multer instead, so a small JSON limit does not restrict PDF submissions.
@@ -63,6 +103,7 @@ import reportsRouter from './routes/reports.js'
 import usersRouter from './routes/users.js'
 import settingsRouter from './routes/settings.js'
 import auditLogsRouter from './routes/auditLogs.js'
+import sessionsRouter from './routes/sessions.js'
 import dashboardRouter from './routes/dashboard.js'
 import financeRouter from './routes/finance.js'
 import publicApplicationsRouter from './routes/publicApplications.js'
@@ -78,6 +119,7 @@ app.use('/api/reports', reportsRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/settings', settingsRouter)
 app.use('/api/audit-logs', auditLogsRouter)
+app.use('/api/sessions', sessionsRouter)
 app.use('/api/dashboard', dashboardRouter)
 app.use('/api/finance', financeRouter)
 app.use('/api/apply', publicApplicationsRouter)
