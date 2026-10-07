@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import ambientBg from '../assets/adele-ambient-2.jpg'
+import { api } from '../admin/api.js'
 import '../pages.css'
 
 const initialForm = {
@@ -13,6 +14,8 @@ const initialForm = {
 function Contact() {
   const [form, setForm] = useState(initialForm)
   const [sent, setSent] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const [errors, setErrors] = useState({})
 
   function handleChange(e) {
@@ -45,7 +48,7 @@ function Contact() {
     return next
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
 
     const next = validate()
@@ -53,8 +56,17 @@ function Contact() {
 
     if (Object.keys(next).length > 0) return
 
-    setSent(true)
-    setForm(initialForm)
+    setSending(true)
+    setSubmitError('')
+    try {
+      await api('/contact', { method: 'POST', body: form })
+      setSent(true)
+      setForm(initialForm)
+    } catch (err) {
+      setSubmitError(err.message)
+    } finally {
+      setSending(false)
+    }
   }
 
   const errorClass = (name) => (errors[name] ? ' has-error' : '')
@@ -133,6 +145,11 @@ function Contact() {
                   business day.
                 </div>
               )}
+              {submitError && (
+                <div className="form-note" style={{ background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
+                  {submitError}
+                </div>
+              )}
               <form onSubmit={handleSubmit} noValidate>
                 <div className="form-grid">
                   <div className="form-group">
@@ -191,8 +208,8 @@ function Contact() {
                   {errors.message && <small className="field-error">{errors.message}</small>}
                 </div>
 
-                <button type="submit" className="btn btn-primary">
-                  Send Message
+                <button type="submit" className="btn btn-primary" disabled={sending}>
+                  {sending ? 'Sending…' : 'Send Message'}
                 </button>
               </form>
             </div>

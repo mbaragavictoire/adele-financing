@@ -101,6 +101,7 @@ export const ROLE_LABELS = {
 
 export const ADMIN_NAVIGATION = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
+  { to: '/admin/messages', label: 'Messages', icon: '📨' },
   { to: '/admin/customers', label: 'Customers', icon: '👥' },
   { to: '/admin/loan-applications', label: 'Loan Applications', icon: '📝' },
   { to: '/admin/loan-products', label: 'Loan Products', icon: '🏷️' },
@@ -132,6 +133,7 @@ export const ADMIN_PERMISSIONS = {
   ],
   manager: [
     '/admin/dashboard',
+    '/admin/messages',
     '/admin/loan-applications',
     '/admin/loans',
     '/admin/reports',

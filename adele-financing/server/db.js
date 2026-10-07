@@ -402,6 +402,20 @@ const SCHEMA = `
     recorded_by INT,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
+
+  -- Visitor messages from the public Contact page. Anonymous input stored for
+  -- staff to read; status dances new -> read -> archived, never deleted, so the
+  -- inbox keeps an audit-friendly history.
+  CREATE TABLE IF NOT EXISTS contact_messages (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    subject VARCHAR(160) NOT NULL,
+    message TEXT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'new',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_contact_status (status, created_at)
+  );
 `
 
 async function countRows(table) {

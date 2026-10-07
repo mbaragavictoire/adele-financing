@@ -172,6 +172,7 @@ import sessionsRouter from './routes/sessions.js'
 import dashboardRouter from './routes/dashboard.js'
 import financeRouter from './routes/finance.js'
 import publicApplicationsRouter from './routes/publicApplications.js'
+import contactRouter from './routes/contactMessages.js'
 
 app.use('/api/auth', authRouter)
 app.use('/api/customers', customersRouter)
@@ -188,6 +189,7 @@ app.use('/api/sessions', sessionsRouter)
 app.use('/api/dashboard', dashboardRouter)
 app.use('/api/finance', financeRouter)
 app.use('/api/apply', publicApplicationsRouter)
+app.use('/api/contact', contactRouter)
 
 // Serve built frontend in production
 const distDir = path.join(__dirname, '..', 'dist')

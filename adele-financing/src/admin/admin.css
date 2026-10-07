@@ -366,6 +366,9 @@
 .status-paid { background: #dcfce7; color: #166534; }
 .status-disbursement { background: var(--gold-tint); color: var(--gold-dark); }
 .status-repayment { background: var(--blue-soft); color: var(--blue-dark); }
+.status-new { background: var(--gold-tint); color: var(--gold-dark); }
+.status-read { background: var(--blue-soft); color: var(--blue-dark); }
+.status-archived { background: var(--bg-soft); color: var(--text-muted); }
 
 /* ---- Buttons ---- */
 .admin-btn {
@@ -876,4 +879,43 @@
 
 .admin-login-back:hover {
   color: var(--blue);
+}
+
+/* ---- Contact messages inbox ---- */
+.text-muted {
+  color: var(--text-muted);
+}
+
+.admin-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.message-detail {
+  margin-bottom: 16px;
+}
+
+.message-detail-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.message-detail-meta {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.message-detail-body {
+  margin-top: 14px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-size: 14px;
 }

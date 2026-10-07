@@ -11,6 +11,7 @@ import { AuthProvider } from './admin/AuthContext.jsx'
 import { AdminRoute, AdminLayoutRoute } from './admin/AdminRoutes.jsx'
 import AdminLogin from './pages/admin/Login'
 import Dashboard from './pages/admin/Dashboard'
+import Messages from './pages/admin/Messages'
 import Customers from './pages/admin/Customers'
 import LoanApplications from './pages/admin/LoanApplications'
 import LoanProductsPage from './pages/admin/LoanProducts'
@@ -50,6 +51,7 @@ function AppRoutes() {
         }
       >
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="messages" element={<Messages />} />
         <Route path="customers" element={<Customers />} />
         <Route path="loan-applications" element={<LoanApplications />} />
         <Route path="loan-products" element={<LoanProductsPage />} />
