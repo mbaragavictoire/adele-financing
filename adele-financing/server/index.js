@@ -11,17 +11,39 @@ import { pruneSessions } from './session.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-await initDb()
-maybePruneLoginAttempts()
-setInterval(maybePruneLoginAttempts, 60 * 60 * 1000).unref()
+// The API listens first and initialises second — the ordering is the point.
+//
+// Building the schema, seeding and migrating used to run before app.listen(),
+// so for the whole of that window port 4000 accepted nothing at all. Vite
+// serves the SPA the instant it boots, the browser asks for GET /api/auth/me
+// straight away, and the proxy found no socket to connect to — hence
+// ECONNREFUSED, printed as an AggregateError because Node tried both ::1 and
+// 127.0.0.1 and both were refused. The "ADELE LMS API running" line that
+// appeared after those errors was not a crash; it was the API announcing it had
+// finally come up. Requests arriving during that window are now held by the
+// gate further down and released the moment the schema is in place.
+const boot = { ready: false, waiters: [] }
 
-// Expired sessions are also closed lazily on the request that notices them, but
-// this keeps the admin session list honest about sessions nobody has retried.
-pruneSessions().catch((e) => console.error('session prune failed:', e.message))
-setInterval(
-  () => pruneSessions().catch((e) => console.error('session prune failed:', e.message)),
-  60 * 60 * 1000,
-).unref()
+function markBootReady() {
+  boot.ready = true
+  for (const release of boot.waiters.splice(0)) release(true)
+}
+
+/**
+ * Waits for boot. Resolves true once ready, or 'timeout' if it takes too long.
+ * It deliberately never rejects and never hangs indefinitely: a database that
+ * fails to start must not leave sockets open and connections waiting forever.
+ */
+function awaitBoot(timeoutMs) {
+  if (boot.ready) return Promise.resolve(true)
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve('timeout'), timeoutMs)
+    boot.waiters.push(() => {
+      clearTimeout(timer)
+      resolve(true)
+    })
+  })
+}
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -38,6 +60,20 @@ const ALLOWED_ORIGINS = String(process.env.CORS_ORIGINS || '')
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean)
+
+// Origins this application is deliberately served from, for the CSRF check
+// below. Derived from configuration the operator sets, so — unlike a forwarded
+// header the caller could write — it cannot be used to talk your way past the
+// check. Empty unless CORS_ORIGINS is configured.
+const CONFIGURED_HOSTS = new Set(
+  ALLOWED_ORIGINS.flatMap((origin) => {
+    try {
+      return [new URL(origin).host.toLowerCase()]
+    } catch {
+      return [] // not a parseable URL; not usable as a host
+    }
+  }),
+)
 
 app.use(
   cors({
@@ -58,9 +94,15 @@ app.use(
 // forgery, so every state-changing API call must come from this origin.
 //
 // SameSite=strict is the primary defence. This is the backstop for the cases it
-// cannot cover. Comparing against the request's own Host header rather than a
-// configured allowlist means it keeps working behind a tunnel or any hostname
-// without needing that hostname hard-coded.
+// cannot cover. The request's own Host header is the primary comparison because
+// it describes the origin the browser actually addressed, which keeps working
+// behind a tunnel without that hostname being hard-coded. CORS_ORIGINS is
+// accepted as well, for deployments where a proxy rewrites Host to a backend
+// address and the two no longer agree.
+//
+// X-Forwarded-Host is deliberately not consulted. CORS_ORIGINS defaults to
+// allow-all, so trusting a header the caller can supply would weaken this to
+// whatever the caller claims; Host is set by the connection, not the page.
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
 app.use('/api', (req, res, next) => {
   if (SAFE_METHODS.has(req.method)) return next()
@@ -73,12 +115,13 @@ app.use('/api', (req, res, next) => {
 
   let originHost
   try {
-    originHost = new URL(origin).host
+    originHost = new URL(origin).host.toLowerCase()
   } catch {
     return res.status(403).json({ error: 'Request origin could not be verified.' })
   }
 
-  if (originHost !== req.headers.host) {
+  const requestHost = String(req.headers.host || '').toLowerCase()
+  if (originHost !== requestHost && !CONFIGURED_HOSTS.has(originHost)) {
     return res.status(403).json({ error: 'Cross-site request refused.' })
   }
   next()
@@ -88,8 +131,30 @@ app.use('/api', (req, res, next) => {
 // multer instead, so a small JSON limit does not restrict PDF submissions.
 app.use(express.json({ limit: '256kb' }))
 
+// Health doubles as the readiness probe. 'starting' is a 503 so that a
+// supervisor polling for 200 is waiting for the thing it actually cares about,
+// rather than for a socket that opens before there is anything behind it.
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'adele-lms-api' })
+  res.status(boot.ready ? 200 : 503).json({
+    status: boot.ready ? 'ok' : 'starting',
+    service: 'adele-lms-api',
+  })
+})
+
+// Readiness gate, registered ahead of every router so it runs first. A request
+// that arrives mid-boot is held rather than refused, which is why the very
+// first call the browser makes after starting the dev server now succeeds
+// instead of failing with a proxy stack trace. Bounded, so it degrades to a
+// considered 503 rather than a hung connection if boot takes unreasonably long.
+const BOOT_WAIT_MS = 30000
+app.use('/api', (req, res, next) => {
+  if (req.path === '/health') return next()
+
+  awaitBoot(BOOT_WAIT_MS).then((ready) => {
+    if (ready === true) return next()
+    res.setHeader('Retry-After', '5')
+    res.status(503).json({ error: 'The database is still starting up. Please retry.' })
+  })
 })
 
 import authRouter from './routes/auth.js'
@@ -176,6 +241,33 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found.' })
 })
 
+// Open the socket first, then boot. Everything above is registration, so the
+// server can accept connections as soon as this is called while initDb() still
+// runs; requests reaching the gate are queued until it finishes.
 app.listen(PORT, () => {
-  console.log(`ADELE LMS API running at http://localhost:${PORT}`)
+  console.log(`ADELE LMS API listening on http://localhost:${PORT}`)
 })
+
+try {
+  await initDb()
+} catch (error) {
+  // Fail fast rather than leave a process up that answers every request with
+  // 500. Previously this surfaced as an unhandled rejection from a top-level
+  // await; the exit code is unchanged, the message is now readable.
+  console.error('ADELE LMS API failed to start:', error)
+  process.exit(1)
+}
+
+markBootReady()
+console.log(`ADELE LMS API ready at http://localhost:${PORT}`)
+
+maybePruneLoginAttempts()
+setInterval(maybePruneLoginAttempts, 60 * 60 * 1000).unref()
+
+// Expired sessions are also closed lazily on the request that notices them, but
+// this keeps the admin session list honest about sessions nobody has retried.
+pruneSessions().catch((e) => console.error('session prune failed:', e.message))
+setInterval(
+  () => pruneSessions().catch((e) => console.error('session prune failed:', e.message)),
+  60 * 60 * 1000,
+).unref()

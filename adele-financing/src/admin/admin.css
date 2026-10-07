@@ -444,6 +444,61 @@
   text-decoration: underline;
 }
 
+/* ---- Tabs ---- */
+/* Segmented control on the Reports (report type) and Finance (Income /
+   Expenses) pages. These render as bare <button> elements, so without a rule
+   here they fall back to the browser default — grey bevelled boxes that do not
+   match anything else in the admin. No transform is used on purpose: the
+   reduced-motion block in index.css enumerates hover transforms, and a
+   colour-only transition does not need to be on that list. */
+.admin-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  background: var(--white);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+}
+
+.admin-tab {
+  border: none;
+  background: transparent;
+  color: var(--navy);
+  padding: 7px 14px;
+  border-radius: calc(var(--radius-sm) - 3px);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+
+.admin-tab:hover {
+  background: var(--bg-soft);
+  color: var(--blue);
+}
+
+/* Selected tab follows the navy-with-white-text language of admin-btn-primary,
+   so a chosen tab reads as a chosen control rather than as a call to action. */
+.admin-tab.active {
+  background: var(--navy);
+  color: var(--white);
+}
+
+.admin-tab.active:hover {
+  background: var(--blue);
+  color: var(--white);
+}
+
+.admin-tab:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
 /* ---- Toolbar ---- */
 .admin-toolbar {
   display: flex;

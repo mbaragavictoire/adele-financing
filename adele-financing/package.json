@@ -11,6 +11,8 @@
     "lint": "eslint .",
     "check:server": "node scripts/check-server-imports.mjs",
     "verify:sessions": "node scripts/verify-sessions.mjs",
+    "verify:csrf": "node scripts/verify-csrf.mjs",
+    "verify:startup": "node scripts/verify-startup.mjs",
     "preview": "vite preview",
     "start": "node server/index.js"
   },
