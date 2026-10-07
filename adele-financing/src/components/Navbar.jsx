@@ -54,13 +54,6 @@ function Navbar() {
           <Link to="/apply" className="btn btn-gold nav-cta" onClick={() => setOpen(false)}>
             Apply Now
           </Link>
-          <NavLink
-            to="/admin/login"
-            className="nav-staff-login"
-            onClick={() => setOpen(false)}
-          >
-            Staff Login
-          </NavLink>
         </nav>
       </div>
     </header>

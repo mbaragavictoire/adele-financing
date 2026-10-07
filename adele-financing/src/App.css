@@ -139,39 +139,6 @@
   display: none;
 }
 
-.nav-staff-login {
-  background: transparent;
-  border: 1px solid var(--navy);
-  border-radius: 999px;
-  padding: 7px 15px;
-  font-size: 12.5px;
-  color: var(--navy);
-  font-weight: 600;
-  letter-spacing: 0.2px;
-  transition:
-    background-color var(--t-fast) var(--ease),
-    color var(--t-fast) var(--ease),
-    border-color var(--t-fast) var(--ease),
-    transform var(--t-fast) var(--ease);
-}
-
-.nav-staff-login::after {
-  display: none;
-}
-
-.nav-staff-login:hover {
-  background: var(--navy);
-  border-color: var(--navy);
-  color: var(--white);
-  transform: translateY(-1px);
-}
-
-.nav-links a.nav-staff-login.active {
-  background: var(--blue);
-  border-color: var(--blue);
-  color: var(--white);
-}
-
 .nav-toggle {
   display: none;
   background: none;
@@ -229,11 +196,6 @@
 
   .nav-links a.active {
     color: var(--blue);
-  }
-
-  .nav-staff-login {
-    margin-top: 14px;
-    text-align: center;
   }
 
   .nav-cta {

@@ -36,9 +36,6 @@ function Footer() {
               <li>
                 <Link to="/apply">Apply</Link>
               </li>
-              <li>
-                <Link to="/admin/login">Staff Login</Link>
-              </li>
             </ul>
           </div>
           <div>
