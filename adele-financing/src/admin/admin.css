@@ -263,7 +263,7 @@
 /* Soft tinted tiles; the icon colour is what distinguishes them. */
 .accent-teal { background: var(--blue-soft); color: var(--blue); }
 .accent-gold { background: var(--gold-tint); color: var(--gold-dark); }
-.accent-navy { background: #e8edf3; color: var(--navy); }
+.accent-navy { background: var(--blue-soft); color: var(--navy); }
 .accent-green { background: #dcfce7; color: #166534; }
 .accent-red { background: #fee2e2; color: #b91c1c; }
 
@@ -407,7 +407,7 @@
 .admin-btn-gold {
   background: var(--gold);
   border-color: var(--gold);
-  color: var(--navy);
+  color: var(--navy-deep);
 }
 
 .admin-btn-gold:hover {
@@ -657,7 +657,7 @@
 
 .admin-alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
 .admin-alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-.admin-alert-info { background: var(--blue-soft); color: var(--blue-dark); border: 1px solid #bfdbfe; }
+.admin-alert-info { background: var(--blue-soft); color: var(--blue-dark); border: 1px solid #bce3e9; }
 .admin-alert-warning { background: var(--gold-tint); color: var(--gold-dark); border: 1px solid var(--gold-light); }
 
 /* ---- Quarter selector ---- */

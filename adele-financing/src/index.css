@@ -5,19 +5,19 @@
    variables, so the palette can be changed here and nowhere else.
 
    Colour hierarchy (deliberate, not decorative):
-     Navy  = identity and authority (nav, headings, dark sections, footer)
-     Blue  = interaction (links, icons, hover, active states)
-     Gold  = attention and primary actions, used sparingly
-     White = cleanliness; light background = breathing room
+     Deep teal = identity and authority (nav, headings, dark sections, footer)
+     Teal      = interaction (links, icons, hover, active states)
+     Gold      = attention and primary actions, used sparingly
+     White     = cleanliness; light background = breathing room
    ========================================================================== */
 
 :root {
   /* --- Brand --- */
-  --navy: #123b66;
-  --navy-deep: #0c2a4b; /* deeper navy for the footer and layered dark surfaces */
-  --blue: #1e5a91;
-  --blue-dark: #17456f;
-  --blue-soft: #eaf1f8; /* selected states and tinted backgrounds */
+  --navy: #0b7f8c;
+  --navy-deep: #085f6b; /* deeper teal for the footer and layered dark surfaces */
+  --blue: #0a9ca9;
+  --blue-dark: #0b7f8c;
+  --blue-soft: #e2f2f3; /* selected states and tinted backgrounds */
   --gold: #d9a441;
   --gold-dark: #c08f2c;
   --gold-light: #f4e7c1;
@@ -38,10 +38,10 @@
   --navy-dark: var(--navy-deep);
 
   /* --- Elevation --- */
-  --shadow-sm: 0 1px 2px rgba(18, 59, 102, 0.06);
-  --shadow: 0 4px 18px rgba(18, 59, 102, 0.07);
-  --shadow-md: 0 10px 30px rgba(18, 59, 102, 0.1);
-  --shadow-lift: 0 14px 34px rgba(18, 59, 102, 0.14);
+  --shadow-sm: 0 1px 2px rgba(11, 127, 140, 0.06);
+  --shadow: 0 4px 18px rgba(11, 127, 140, 0.07);
+  --shadow-md: 0 10px 30px rgba(11, 127, 140, 0.1);
+  --shadow-lift: 0 14px 34px rgba(11, 127, 140, 0.14);
 
   /* --- Shape --- */
   --radius: 12px;
@@ -157,7 +157,7 @@ a:hover {
 /* Gold is reserved for the single most important action on a screen. */
 .btn-gold {
   background: var(--gold);
-  color: var(--navy);
+  color: var(--navy-deep);
   border-color: var(--gold);
   font-weight: 700;
 }
@@ -165,7 +165,7 @@ a:hover {
 .btn-gold:hover {
   background: var(--gold-dark);
   border-color: var(--gold-dark);
-  color: var(--navy);
+  color: var(--navy-deep);
   box-shadow: 0 10px 24px rgba(217, 164, 65, 0.35);
 }
 

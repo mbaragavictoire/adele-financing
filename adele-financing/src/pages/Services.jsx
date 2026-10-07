@@ -32,7 +32,7 @@ function Services() {
         style={{
           // Same navy wash used on the closing call-to-action: the photo adds
           // texture behind the heading while the text stays fully legible.
-          backgroundImage: `linear-gradient(rgba(18, 59, 102, 0.9), rgba(12, 42, 75, 0.94)), url(${ambientBg})`,
+          backgroundImage: `linear-gradient(rgba(11, 127, 140, 0.9), rgba(8, 95, 107, 0.94)), url(${ambientBg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}

@@ -30,7 +30,7 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-bottom-color: var(--border);
-  box-shadow: 0 6px 24px rgba(18, 59, 102, 0.09);
+  box-shadow: 0 6px 24px rgba(11, 127, 140, 0.09);
 }
 
 .navbar-inner {
