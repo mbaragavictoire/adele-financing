@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import ambientBg from '../assets/adele-ambient-2.jpg'
 import { api } from '../admin/api.js'
+import { isValidName, stripInvalidNameChars } from '../admin/name.js'
 import '../pages.css'
 
 const initialForm = {
@@ -19,7 +20,10 @@ function Contact() {
   const [errors, setErrors] = useState({})
 
   function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value })
+    // Names are letters only: drop digits and symbols as they are typed so a
+    // pasted phone number or ID cannot land in the name field.
+    const value = e.target.name === 'name' ? stripInvalidNameChars(e.target.value) : e.target.value
+    setForm({ ...form, [e.target.name]: value })
     setErrors((prev) => ({
       ...prev,
       [e.target.name]: '',
@@ -29,7 +33,11 @@ function Contact() {
   function validate() {
     const next = {}
 
-    if (!form.name.trim()) next.name = 'Name is required.'
+    if (!form.name.trim()) {
+      next.name = 'Name is required.'
+    } else if (!isValidName(form.name)) {
+      next.name = 'Name may only contain letters (no numbers or symbols).'
+    }
 
     if (!form.email.trim()) {
       next.email = 'Email address is required.'

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import '../pages.css'
 import { PhoneInput } from '../admin/ui.jsx'
 import { isValidRwPhone, rwPhoneFull } from '../admin/phone.js'
+import { isValidName, stripInvalidNameChars } from '../admin/name.js'
 import { apiUrl } from '../admin/api.js'
 
 const initialForm = {
@@ -35,6 +36,10 @@ function Apply() {
       next.phone = rwPhoneFull(value)
     } else if (name === 'amount') {
       next.amount = numericOnly(value).slice(0, 12)
+    } else if (name === 'first' || name === 'last') {
+      // Names are letters only: drop digits and symbols as they are typed so a
+      // pasted phone number or ID cannot land in a name field.
+      next[name] = stripInvalidNameChars(value)
     } else {
       next[name] = value
     }
@@ -60,8 +65,16 @@ function Apply() {
   function validate() {
     const next = {}
 
-    if (!form.first.trim()) next.first = 'First name is required.'
-    if (!form.last.trim()) next.last = 'Last name is required.'
+    if (!form.first.trim()) {
+      next.first = 'First name is required.'
+    } else if (!isValidName(form.first)) {
+      next.first = 'First name may only contain letters (no numbers or symbols).'
+    }
+    if (!form.last.trim()) {
+      next.last = 'Last name is required.'
+    } else if (!isValidName(form.last)) {
+      next.last = 'Last name may only contain letters (no numbers or symbols).'
+    }
 
     if (!form.email.trim()) {
       next.email = 'Email address is required.'
