@@ -370,6 +370,22 @@
 .status-read { background: var(--blue-soft); color: var(--blue-dark); }
 .status-archived { background: var(--bg-soft); color: var(--text-muted); }
 
+/* ---- Loans count chip ---- */
+.loans-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--bg-soft);
+  color: var(--text-muted);
+}
+.loans-chip-multi {
+  background: var(--gold-tint);
+  color: var(--gold-dark);
+}
+
 /* ---- Buttons ---- */
 .admin-btn {
   display: inline-flex;
