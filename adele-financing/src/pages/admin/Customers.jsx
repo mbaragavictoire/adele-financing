@@ -285,7 +285,7 @@ function Customers() {
         >
           <option value="">All customers</option>
           <option value="1">Has loans (1+)</option>
-          <option value="2">Multiple loans (2+)</option>
+          <option value="2">Repeat borrowers (2+)</option>
         </select>
         <div className="spacer" />
         <button
@@ -330,7 +330,10 @@ function Customers() {
               </thead>
               <tbody>
                 {rows.map((c) => (
-                  <tr key={c.id}>
+                  <tr
+                    key={c.id}
+                    className={Number(c.loans_count) > 1 ? 'loans-row-multi' : undefined}
+                  >
                     <td>{c.customer_id}</td>
                     <td>{c.full_name}</td>
                     <td>{c.phone_number}</td>
