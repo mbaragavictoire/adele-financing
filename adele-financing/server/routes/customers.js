@@ -84,9 +84,7 @@ router.get('/', requireAuth, async (req, res) => {
     }
     if (where.length) sql += ` WHERE ${where.join(' AND ')}`
 
-    // Repeat borrowers first, then newest — multi-loan customers surface
-    // automatically without needing the ?loans filter.
-    sql += ` ORDER BY loans_count DESC, id DESC LIMIT 500`
+    sql += ` ORDER BY id DESC LIMIT 500`
 
     const rows = await queryAll(sql, params)
     res.json({ customers: rows.map(mapCustomer) })

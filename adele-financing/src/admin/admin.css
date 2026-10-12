@@ -385,9 +385,6 @@
   background: var(--gold-tint);
   color: var(--gold-dark);
 }
-.loans-row-multi td {
-  background-color: var(--gold-tint);
-}
 
 /* ---- Buttons ---- */
 .admin-btn {
