@@ -105,7 +105,6 @@ function Customers() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
-  const [loans, setLoans] = useState('')
   const [viewing, setViewing] = useState(null)
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState(emptyCustomer)
@@ -123,7 +122,6 @@ function Customers() {
       const params = {}
       if (search) params.search = search
       if (status) params.status = status
-      if (loans) params.loans = loans
       const data = await apiGet('/customers', params)
       setRows(data.customers)
     } catch (e) {
@@ -131,7 +129,7 @@ function Customers() {
     } finally {
       setLoading(false)
     }
-  }, [search, status, loans])
+  }, [search, status])
 
   useEffect(() => {
     const t = setTimeout(load, 300)
@@ -277,16 +275,6 @@ function Customers() {
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </select>
-        <select
-          className="admin-select"
-          style={{ width: 170 }}
-          value={loans}
-          onChange={(e) => setLoans(e.target.value)}
-        >
-          <option value="">All customers</option>
-          <option value="1">Has loans (1+)</option>
-          <option value="2">Multiple loans (2+)</option>
-        </select>
         <div className="spacer" />
         <button
           className="admin-btn"
@@ -323,7 +311,6 @@ function Customers() {
                     <th>Amount</th>
                     <th>Period</th>
                     <th>Status</th>
-                    <th>Loans</th>
                     <th>Date</th>
                     <th></th>
                   </tr>
@@ -338,17 +325,6 @@ function Customers() {
                     <td>{formatCurrency(c.amount ?? 0)}</td>
                     <td>{c.duration ? `${c.duration} mo` : '-'}</td>
                     <td><StatusBadge status={c.status} /></td>
-                    <td>
-                      {Number(c.loans_count) > 1 ? (
-                        <span className="loans-chip loans-chip-multi">
-                          {c.loans_count} loans
-                        </span>
-                      ) : Number(c.loans_count) === 1 ? (
-                        <span className="loans-chip">{c.loans_count} loan</span>
-                      ) : (
-                        '-'
-                      )}
-                    </td>
                     <td>{formatDate(c.registration_date)}</td>
                     <td>
                       <button

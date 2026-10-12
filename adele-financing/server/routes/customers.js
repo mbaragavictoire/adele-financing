@@ -18,7 +18,6 @@ function mapCustomer(row) {
     duration: row.duration,
     status: row.status,
     registration_date: row.registration_date,
-    loans_count: Number(row.loans_count ?? 0),
   }
 }
 
@@ -53,13 +52,8 @@ async function nextCustomerId() {
 // All authenticated staff can view customers
 router.get('/', requireAuth, async (req, res) => {
   try {
-    // Live loan count per customer (also used by the ?loans filter below).
-    const loansCountSql =
-      '(SELECT COUNT(*) FROM loans l WHERE l.customer_id = customers.id)'
-
     let sql = `
-      SELECT customers.*, ${loansCountSql} AS loans_count
-      FROM customers
+      SELECT * FROM customers
     `
     const params = {}
     const q = req.query
@@ -74,13 +68,6 @@ router.get('/', requireAuth, async (req, res) => {
         '(customer_id LIKE @search OR full_name LIKE @search OR phone_number LIKE @search OR email LIKE @search OR gender LIKE @search)',
       )
       params.search = `%${q.search.trim()}%`
-    }
-    if (q.loans !== undefined && q.loans !== '') {
-      const minLoans = Number.parseInt(q.loans, 10)
-      if (Number.isInteger(minLoans) && minLoans >= 1) {
-        where.push(`${loansCountSql} >= @loans`)
-        params.loans = minLoans
-      }
     }
     if (where.length) sql += ` WHERE ${where.join(' AND ')}`
 
