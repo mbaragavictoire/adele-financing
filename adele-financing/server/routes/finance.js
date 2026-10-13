@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { queryAll, queryOne, run } from '../db.js'
 import { requireAuth, requireRole, handleError } from '../auth.js'
 import { writeAudit, genId } from '../utils.js'
-import { parseQuarter } from '../quarter.js'
+import { parseQuarter, quarterFromQuery } from '../quarter.js'
 
 const router = Router()
 
@@ -86,6 +86,29 @@ async function periodSums(range) {
   }
 }
 
+// Cumulative (opening balance inclusive) totals with every transaction dated
+// on or before the quarter end — used for the cash balance "as of period end".
+async function cumulativeTo(endIso) {
+  const [otherIncome, expenses] = await Promise.all([
+    queryOne('SELECT COALESCE(SUM(amount), 0) AS s FROM incomes WHERE income_date <= ?', [endIso]),
+    queryOne('SELECT COALESCE(SUM(amount), 0) AS s FROM expenses WHERE expense_date <= ?', [endIso]),
+  ])
+  const [repayments, disbursements] = await Promise.all([
+    queryOne('SELECT COALESCE(SUM(amount), 0) AS s FROM repayments WHERE payment_date <= ?', [endIso]),
+    queryOne(
+      `SELECT COALESCE(SUM(disbursed_amount), 0) AS s FROM loans
+       WHERE disbursement_date IS NOT NULL AND status != 'cancelled' AND disbursement_date <= ?`,
+      [endIso],
+    ),
+  ])
+  return {
+    income: Number(otherIncome.s),
+    expensesTotal: Number(expenses.s),
+    repayTotal: Number(repayments.s),
+    disbursedTotal: Number(disbursements.s),
+  }
+}
+
 // Aggregate numbers used across several reports.
 // With a range: period figures are scoped to the quarter; cash balance is always "to date".
 async function financeAggregates(range = null) {
@@ -120,12 +143,34 @@ async function financeAggregates(range = null) {
 // Registered only by super_admin permanently: keep this router usable by finance roles
 router.use(requireAuth, requireRole(...FINANCE_ROLES))
 
-// Financial summary (dashboard cards)
+// Financial summary (dashboard cards). With ?q= and ?year= the flow figures
+// (income/expenses/interest/net) are scoped to the quarter; cash balance is
+// reported as of the quarter-end date, opening balance included.
 router.get('/summary', async (req, res) => {
   try {
+    const parsed = quarterFromQuery(req.query.q, req.query.year)
+    if (parsed.error) return res.status(400).json({ error: parsed.error })
+    const quarter = parsed.quarter
+
     const a = await financeAggregates()
+    const period = await periodSums({ start: quarter.start, end: quarter.end })
+    const cum = await cumulativeTo(quarter.end)
+
+    const interestIncomeQuarter = period.interestIncome
+    const otherIncomeQuarter = period.income
+    const totalIncomeQuarter = interestIncomeQuarter + otherIncomeQuarter
+    const expensesQuarter = period.expensesTotal
+    const netProfitQuarter = totalIncomeQuarter - expensesQuarter
+    const cashBalanceEnd =
+      (await getSetting('opening_cash')) +
+      cum.repayTotal +
+      cum.income -
+      cum.disbursedTotal -
+      cum.expensesTotal
+
     res.json({
       summary: {
+        // All-time figures (kept for compatibility with existing callers)
         total_income: a.income + a.interestIncome,
         other_income: a.income,
         interest_income: a.interestIncome,
@@ -133,6 +178,24 @@ router.get('/summary', async (req, res) => {
         net_profit: a.netProfit,
         cash_balance: a.cashBalance,
         outstanding_loans: a.outstandingBalance,
+        // Selected quarter: flows during the quarter, balance as of period end
+        quarter: {
+          q: quarter.q,
+          year: quarter.year,
+          label: quarter.label,
+          start: quarter.start,
+          end: quarter.end,
+          endExclusive: quarter.endExclusive,
+          dateRangeLabel: quarter.dateRangeLabel,
+        },
+        income_quarter: otherIncomeQuarter,
+        interest_income_quarter: interestIncomeQuarter,
+        total_income_quarter: totalIncomeQuarter,
+        expenses_quarter: expensesQuarter,
+        net_profit_quarter: netProfitQuarter,
+        repayments_received_quarter: period.repayTotal,
+        disbursed_quarter: period.disbursedTotal,
+        cash_balance_end: cashBalanceEnd,
       },
     })
   } catch (e) {

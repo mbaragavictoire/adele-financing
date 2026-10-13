@@ -1,14 +1,16 @@
 import { Router } from 'express'
 import { queryAll, queryOne } from '../db.js'
 import { requireAuth, requireRole, handleError } from '../auth.js'
-import { parseQuarter } from '../quarter.js'
+import { quarterFromQuery } from '../quarter.js'
 
 const router = Router()
 
 router.get('/summary', requireAuth, async (req, res) => {
   try {
-    const quarter = parseQuarter(req.query.q, req.query.year)
-    const { start, end } = quarter
+    const parsed = quarterFromQuery(req.query.q, req.query.year)
+    if (parsed.error) return res.status(400).json({ error: parsed.error })
+    const quarter = parsed.quarter
+    const { start, end, endExclusive } = quarter
 
     const customerCounts = await queryOne(
       `SELECT
@@ -74,6 +76,58 @@ router.get('/summary', requireAuth, async (req, res) => {
     )
     const approvedLoans = Number((await queryOne("SELECT COUNT(*) AS c FROM loans WHERE status = 'active'")).c)
 
+    // ---- Quarter-scoped KPI figures (dashboard) ----
+    // Applications: counted by application_date (DATE: BETWEEN fully covers the
+    // last day). Approvals/rejections use the DATETIME stamps with an exclusive
+    // upper bound so the entire final day of the quarter is included.
+    const applicationsTotalQuarter = Number(
+      (await queryOne(
+        'SELECT COUNT(*) AS c FROM loan_applications WHERE application_date BETWEEN ? AND ?',
+        [start, end],
+      )).c,
+    )
+    const applicationsApprovedQuarter = Number(
+      (await queryOne(
+        'SELECT COUNT(*) AS c FROM loan_applications WHERE approved_at >= ? AND approved_at < ?',
+        [start, endExclusive],
+      )).c,
+    )
+    const applicationsRejectedQuarter = Number(
+      (await queryOne(
+        'SELECT COUNT(*) AS c FROM loan_applications WHERE rejected_at >= ? AND rejected_at < ?',
+        [start, endExclusive],
+      )).c,
+    )
+    const repaymentsReceivedQuarter = Number(
+      (await queryOne(
+        'SELECT COALESCE(SUM(amount), 0) AS s FROM repayments WHERE payment_date BETWEEN ? AND ?',
+        [start, end],
+      )).s,
+    )
+    // Outstanding balances as of the quarter-end date. Reconstructed from the
+    // loan history so it includes opening balances and every earlier repayment:
+    //   disbursed principal - principal repaid on or before the quarter end,
+    // for every loan already disbursed by then. Principal share of a repayment
+    // uses the same ratio (principal / total_payable) as the rest of the app.
+    const outstandingEnd = Number(
+      (await queryOne(
+        `SELECT COALESCE(SUM(outstanding_end), 0) AS s FROM (
+           SELECT COALESCE(l.disbursed_amount, l.principal)
+                - COALESCE((
+                    SELECT SUM(r.amount)
+                    FROM repayments r
+                    WHERE r.loan_id = l.id AND r.payment_date <= ?
+                  ), 0)
+                  * (l.principal / NULLIF(l.total_payable, 0)) AS outstanding_end
+           FROM loans l
+           WHERE l.status != 'cancelled'
+             AND l.disbursement_date IS NOT NULL
+             AND l.disbursement_date <= ?
+         ) t`,
+        [end, end],
+      )).s,
+    )
+
     res.json({
       summary: {
         total_customers: totalCustomers,
@@ -93,12 +147,19 @@ router.get('/summary', requireAuth, async (req, res) => {
         capital_repaid_quarter: capitalRepaidQuarter,
         total_repaid: totalRepaid,
         outstanding_balance: outstanding,
+        // Quarter-scoped dashboard figures
+        applications_total_quarter: applicationsTotalQuarter,
+        applications_approved_quarter: applicationsApprovedQuarter,
+        applications_rejected_quarter: applicationsRejectedQuarter,
+        repayments_received_quarter: repaymentsReceivedQuarter,
+        outstanding_balance_end: outstandingEnd,
         quarter: {
           q: quarter.q,
           year: quarter.year,
           label: quarter.label,
           start: quarter.start,
           end: quarter.end,
+          endExclusive: quarter.endExclusive,
           dateRangeLabel: quarter.dateRangeLabel,
         },
       },
