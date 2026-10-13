@@ -5,6 +5,11 @@ import { writeAudit, genId, isValidRwPhone, rwPhoneFull } from '../utils.js'
 
 const router = Router()
 
+// Customers store the term of their latest approved loan (months). Loan
+// products can run much longer than the old fixed 6-month ceiling, so the
+// legacy 6-month cap is relaxed to a generous sanity bound instead.
+const MAX_CUSTOMER_DURATION_MONTHS = 120
+
 function mapCustomer(row) {
   if (!row) return null
   return {
@@ -227,8 +232,8 @@ router.post('/bulk', requireAuth, requireRole('super_admin', 'loan_officer', 'ma
           errors.push({ row: index, error: 'Amount must be a valid number (0 or more).' })
           continue
         }
-        if (!Number.isFinite(duration) || duration < 0 || duration > 6) {
-          errors.push({ row: index, error: 'Duration must be between 0 and 6 months.' })
+        if (!Number.isFinite(duration) || duration < 0 || duration > MAX_CUSTOMER_DURATION_MONTHS) {
+          errors.push({ row: index, error: `Duration must be between 0 and ${MAX_CUSTOMER_DURATION_MONTHS} months.` })
           continue
         }
 
@@ -300,8 +305,8 @@ router.post('/', requireAuth, requireRole('super_admin', 'loan_officer', 'manage
       return res.status(400).json({ error: 'Amount must be a valid number.' })
     }
     const durationValue = Number(duration)
-    if (!Number.isFinite(durationValue) || durationValue < 0 || durationValue > 6) {
-      return res.status(400).json({ error: 'Duration must be between 0 and 6 months.' })
+    if (!Number.isFinite(durationValue) || durationValue < 0 || durationValue > MAX_CUSTOMER_DURATION_MONTHS) {
+      return res.status(400).json({ error: `Duration must be between 0 and ${MAX_CUSTOMER_DURATION_MONTHS} months.` })
     }
 
     const customer_id = await nextCustomerId()
@@ -379,8 +384,8 @@ router.put('/:id', requireAuth, requireRole('super_admin', 'loan_officer', 'mana
       return res.status(400).json({ error: 'Amount must be a valid number.' })
     }
     const durationValue = Number(updated.duration)
-    if (!Number.isFinite(durationValue) || durationValue < 0 || durationValue > 6) {
-      return res.status(400).json({ error: 'Duration must be between 0 and 6 months.' })
+    if (!Number.isFinite(durationValue) || durationValue < 0 || durationValue > MAX_CUSTOMER_DURATION_MONTHS) {
+      return res.status(400).json({ error: `Duration must be between 0 and ${MAX_CUSTOMER_DURATION_MONTHS} months.` })
     }
     const rawDate = String(updated.registration_date ?? '').trim()
     const today = new Date().toISOString().slice(0, 10)

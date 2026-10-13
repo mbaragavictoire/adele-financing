@@ -64,8 +64,14 @@ router.post('/', requireAuth, requireRole('super_admin', 'finance_officer'), asy
 
       const pay = Number(amount)
       if (!Number.isFinite(pay) || pay <= 0) throw httpError(400, 'Invalid repayment amount.')
-      if (pay > Number(loan.outstanding_balance)) {
-        throw httpError(400, `Amount exceeds outstanding balance of ${loan.outstanding_balance}.`)
+
+      const outstanding = Number(loan.outstanding_balance)
+      // Allow the closing payment to clear a sub-franc residue left by float
+      // arithmetic on balances created before whole-franc rounding. Anything
+      // beyond that is still an overpayment and is refused.
+      const CLOSING_EPSILON = 0.5
+      if (pay > outstanding + CLOSING_EPSILON) {
+        throw httpError(400, `Amount exceeds outstanding balance of ${outstanding}.`)
       }
       if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payment_date).trim())) {
         throw httpError(400, 'Payment date must use YYYY-MM-DD.')
@@ -114,11 +120,14 @@ router.post('/', requireAuth, requireRole('super_admin', 'finance_officer'), asy
       )
 
       const newPaid = Number(loan.amount_paid) + pay
-      const newBalance = Number(loan.outstanding_balance) - pay
-      const newStatus = newBalance <= 0 ? 'completed' : loan.status
+      const newBalance = outstanding - pay
+      const settled = newBalance <= CLOSING_EPSILON
+      const newStatus = settled ? 'completed' : loan.status
+      // A completed loan settles to exactly zero with amount_paid equal to
+      // total_payable, so statements never show a stray fractional franc.
       await tx.run(
         'UPDATE loans SET amount_paid = ?, outstanding_balance = ?, status = ? WHERE id = ?',
-        [newPaid, Math.max(newBalance, 0), newStatus, loan_id],
+        [settled ? Number(loan.total_payable) : newPaid, settled ? 0 : Math.max(newBalance, 0), newStatus, loan_id],
       )
 
       if (newStatus === 'completed') {

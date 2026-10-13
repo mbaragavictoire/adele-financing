@@ -103,8 +103,8 @@ function Apply() {
 
     if (!form.monthly) {
       next.monthly = 'Period of payment is required.'
-    } else if (Number(form.monthly) < 1 || Number(form.monthly) > 6) {
-      next.monthly = 'Period of payment cannot be more than 6 months.'
+    } else if (Number(form.monthly) < 1 || Number(form.monthly) > 24) {
+      next.monthly = 'Period of payment cannot be more than 24 months.'
     }
 
     return next
@@ -361,14 +361,14 @@ function Apply() {
                 onChange={handleChange}
                 required
               >
-                <option value="">Select months (max 6)</option>
-                {[1, 2, 3, 4, 5, 6].map((m) => (
+                <option value="">Select months (max 24)</option>
+                {Array.from({ length: 24 }, (_, i) => i + 1).map((m) => (
                   <option key={m} value={m}>
                     {m} month{m > 1 ? 's' : ''}
                   </option>
                 ))}
               </select>
-              <small className="field-hint">Loans are repaid within a maximum of 6 months.</small>
+              <small className="field-hint">The repayment period depends on the loan product you selected.</small>
               {errors.monthly && <small className="field-error">{errors.monthly}</small>}
             </div>
 

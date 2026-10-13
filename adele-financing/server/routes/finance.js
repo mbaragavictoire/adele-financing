@@ -464,13 +464,31 @@ router.post('/income', async (req, res) => {
     const value = Number(amount)
     if (!(value > 0)) return res.status(400).json({ error: 'Invalid amount.' })
 
-    const last = await queryOne('SELECT COUNT(*) AS c FROM incomes')
-    const income_id = genId('INC', Number(last.c))
-    const info = await run(
-      `INSERT INTO incomes (income_id, description, amount, category, income_date, payment_method, recorded_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [income_id, description, value, category, income_date, payment_method, req.user.sub],
-    )
+    // MAX-based sequence (like repayments/applications) so IDs are never reused
+    // after a deletion; the retry loop absorbs a concurrent-creation collision.
+    let income_id = ''
+    let info
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const maxId = await queryOne(
+        `SELECT COALESCE(MAX(CAST(SUBSTRING(income_id, 5) AS UNSIGNED)), 0) AS n
+         FROM incomes`,
+      )
+      const candidateId = genId('INC', Number(maxId.n))
+      try {
+        info = await run(
+          `INSERT INTO incomes (income_id, description, amount, category, income_date, payment_method, recorded_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [candidateId, description, value, category, income_date, payment_method, req.user.sub],
+        )
+        income_id = candidateId
+        break
+      } catch (error) {
+        if (error?.code !== 'ER_DUP_ENTRY' || attempt === 4) throw error
+      }
+    }
+    if (!income_id) {
+      return res.status(500).json({ error: 'Could not allocate an income reference. Please try again.' })
+    }
 
     await writeAudit({
       userId: req.user.sub,
@@ -586,13 +604,31 @@ router.post('/expenses', async (req, res) => {
     const value = Number(amount)
     if (!(value > 0)) return res.status(400).json({ error: 'Invalid amount.' })
 
-    const last = await queryOne('SELECT COUNT(*) AS c FROM expenses')
-    const expense_id = genId('EXP', Number(last.c))
-    const info = await run(
-      `INSERT INTO expenses (expense_id, description, amount, category, expense_date, payment_method, recorded_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [expense_id, description, value, category, expense_date, payment_method, req.user.sub],
-    )
+    // MAX-based sequence (like repayments/applications) so IDs are never reused
+    // after a deletion; the retry loop absorbs a concurrent-creation collision.
+    let expense_id = ''
+    let info
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const maxId = await queryOne(
+        `SELECT COALESCE(MAX(CAST(SUBSTRING(expense_id, 5) AS UNSIGNED)), 0) AS n
+         FROM expenses`,
+      )
+      const candidateId = genId('EXP', Number(maxId.n))
+      try {
+        info = await run(
+          `INSERT INTO expenses (expense_id, description, amount, category, expense_date, payment_method, recorded_by)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [candidateId, description, value, category, expense_date, payment_method, req.user.sub],
+        )
+        expense_id = candidateId
+        break
+      } catch (error) {
+        if (error?.code !== 'ER_DUP_ENTRY' || attempt === 4) throw error
+      }
+    }
+    if (!expense_id) {
+      return res.status(500).json({ error: 'Could not allocate an expense reference. Please try again.' })
+    }
 
     await writeAudit({
       userId: req.user.sub,

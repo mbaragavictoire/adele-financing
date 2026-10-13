@@ -279,9 +279,6 @@ router.post('/', upload.array('documents', 5), async (req, res) => {
     if (!Number.isInteger(duration) || duration < 1) {
       return res.status(400).json({ error: 'Invalid repayment period.' })
     }
-    if (duration > 6) {
-      return res.status(400).json({ error: 'The repayment period cannot be more than 6 months.' })
-    }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(applicationDate) || applicationDate > today) {
       return res.status(400).json({ error: 'Please provide a valid application date.' })
     }
@@ -299,6 +296,12 @@ router.post('/', upload.array('documents', 5), async (req, res) => {
     const applicantName = `${firstName} ${lastName}`.trim()
     const product = await findProduct(loanType, amountValue)
     if (!product) return res.status(400).json({ error: 'No matching loan product is available right now.' })
+    // Duration is capped by the selected product's configured term, matching
+    // the internal application flow (previously hard-capped at 6 months).
+    const productMaxDuration = Number(product.max_duration) || 6
+    if (duration > productMaxDuration) {
+      return res.status(400).json({ error: `The repayment period cannot be more than ${productMaxDuration} months.` })
+    }
 
     let application_id = ''
     for (let attempt = 0; attempt < 5; attempt++) {

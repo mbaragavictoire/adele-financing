@@ -134,7 +134,10 @@ router.post('/disburse', requireAuth, requireRole('super_admin', 'finance_office
       if (!startDate) startDate = new Date().toISOString().slice(0, 10)
 
       const principal = approvedPrincipal
-      const interest = principal * (interestRate / 100)
+      // Whole-franc accounting: RWF has no cents, and a fractional principal +
+      // interest total (e.g. 373332.96) can never be settled by a whole-franc
+      // final payment — the closing balance would get stuck below 1 RWF.
+      const interest = Math.round(principal * (interestRate / 100))
       const totalPayable = principal + interest
       const due = new Date(`${startDate}T00:00:00`)
       due.setMonth(due.getMonth() + duration)
