@@ -1,0 +1,10 @@
+# Preparation only. No account ID, backend URL, secret or deploy command.
+name = "adele-synthetic-preview"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-10-19"
+
+[vars]
+API_MODE = "disabled"
+
+[env.preview.vars]
+API_MODE = "synthetic"

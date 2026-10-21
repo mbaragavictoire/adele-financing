@@ -1,3 +1,4 @@
+import { clientIp } from './clientIp.js'
 /**
  * Server-side session store for the ADELE Loan Management System.
  *
@@ -81,7 +82,7 @@ export function sessionPolicy() {
 }
 
 function requestIp(req) {
-  return String(req?.ip || '').slice(0, MAX_IP)
+  return String(req ? clientIp(req) : '').slice(0, MAX_IP)
 }
 
 function requestUserAgent(req) {

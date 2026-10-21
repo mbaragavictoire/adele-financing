@@ -1,3 +1,4 @@
+import { isPostgres } from './databaseDriver.js'
 import { queryOne } from './db.js'
 import { writeAudit } from './utils.js'
 import {
@@ -157,6 +158,10 @@ export function notFound(res, message = 'Not found.') {
 }
 
 export function handleError(res, error, log = true) {
+  if (isPostgres()) {
+    if (log) console.error('PostgreSQL request failed', { code: error.code || 'APPLICATION_ERROR' })
+    return res.status(error.statusCode || 500).json({ error: error.statusCode ? error.message : 'An unexpected error occurred.' })
+  }
   if (log) console.error(error)
   res.status(500).json({ error: 'An unexpected error occurred.' })
 }

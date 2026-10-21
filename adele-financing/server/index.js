@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { initDb } from './db.js'
 import { securityHeaders } from './security.js'
+import { createSandboxProxyIngress, createRestrictedPostgresProxyIngress } from './proxyIngress.js'
 import { maybePruneLoginAttempts } from './rateLimit.js'
 import { pruneSessions } from './session.js'
 
@@ -53,6 +54,17 @@ const PORT = process.env.PORT || 4000
 app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 1))
 
 app.use(securityHeaders)
+
+// Dedicated opt-in PostgreSQL ingress. Health contains readiness only; no application data.
+if (process.env.ADELE_DEPLOYMENT_MODE === 'postgres-restricted') {
+  const ingress = createRestrictedPostgresProxyIngress(process.env)
+  app.set('trust proxy', false)
+  app.use('/api', ingress)
+}
+// Legacy synthetic sandbox remains separately guarded.
+if (process.env.ADELE_PROXY_SANDBOX_ONLY === 'true') {
+  app.use('/api', createSandboxProxyIngress(process.env))
+}
 
 // Wildcard CORS would let any site on the internet read authenticated API
 // responses. When CORS_ORIGINS is configured only those origins are accepted.
@@ -235,7 +247,7 @@ app.use((err, req, res, next) => {
     return res.status(400).json({ error: err.message })
   }
 
-  console.error('Unhandled error:', err)
+  console.error('Unhandled API error', { code: err?.code || 'APPLICATION_ERROR' })
   res.status(500).json({ error: 'An unexpected error occurred.' })
 })
 
@@ -256,7 +268,7 @@ try {
   // Fail fast rather than leave a process up that answers every request with
   // 500. Previously this surfaced as an unhandled rejection from a top-level
   // await; the exit code is unchanged, the message is now readable.
-  console.error('ADELE LMS API failed to start:', error)
+  console.error('ADELE LMS API failed to start', { code: error?.code || 'STARTUP_ERROR' })
   process.exit(1)
 }
 

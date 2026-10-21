@@ -1,3 +1,6 @@
+import { money } from '../money.js'
+import { isPostgres } from '../databaseDriver.js'
+const financialValue = value => isPostgres() ? money(value) : value
 import { Router } from 'express'
 import { queryAll, queryOne, run } from '../db.js'
 import { requireAuth, requireRole, handleError } from '../auth.js'
@@ -73,7 +76,7 @@ router.post('/', requireAuth, requireRole('super_admin'), async (req, res) => {
       `INSERT INTO loan_products
         (name, description, min_amount, max_amount, interest_rate, max_duration, repayment_frequency, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [name, description || null, min_amount, max_amount, interest_rate, max_duration, repayment_frequency, status],
+      [name, description || null, financialValue(min_amount), financialValue(max_amount), financialValue(interest_rate), max_duration, repayment_frequency, status],
     )
 
     await writeAudit({
@@ -129,9 +132,9 @@ router.put('/:id', requireAuth, requireRole('super_admin'), async (req, res) => 
       [
         updated.name,
         updated.description,
-        updated.min_amount,
-        updated.max_amount,
-        updated.interest_rate,
+        financialValue(updated.min_amount),
+        financialValue(updated.max_amount),
+        financialValue(updated.interest_rate),
         updated.max_duration,
         updated.repayment_frequency,
         updated.status,

@@ -1,3 +1,6 @@
+import { clientIp } from './clientIp.js'
+export { clientIp }
+import { isPostgres } from './databaseDriver.js'
 import { queryAll, queryOne, run } from './db.js'
 
 // Brute-force protection for credential endpoints.
@@ -17,18 +20,11 @@ function windowStart(minutes) {
   return d
 }
 
-export function clientIp(req) {
-  const forwarded = req.headers['x-forwarded-for']
-  if (typeof forwarded === 'string' && forwarded.length > 0) {
-    return forwarded.split(',')[0].trim().slice(0, 64)
-  }
-  return String(req.ip || req.socket?.remoteAddress || 'unknown').slice(0, 64)
-}
 
 export async function recordLoginAttempt(identifier, ip, successful) {
   await run(
     'INSERT INTO login_attempts (identifier, ip, successful) VALUES (?, ?, ?)',
-    [String(identifier || '').slice(0, 255), String(ip || '').slice(0, 64), successful ? 1 : 0],
+    [String(identifier || '').slice(0, 255), String(ip || '').slice(0, 64), isPostgres() ? Boolean(successful) : (successful ? 1 : 0)],
   )
 }
 

@@ -1,3 +1,6 @@
+import { money } from '../money.js'
+import { isPostgres } from '../databaseDriver.js'
+const financialSettings = new Set(['opening_cash','equipment_value','owner_capital','liabilities_value'])
 import { Router } from 'express'
 import { queryAll, run } from '../db.js'
 import { requireAuth, requireRole, handleError } from '../auth.js'
@@ -20,7 +23,7 @@ router.put('/', requireAuth, requireRole('super_admin'), async (req, res) => {
     for (const [key, value] of Object.entries(updates)) {
       await run(
         'INSERT INTO settings (`key`, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)',
-        [key, String(value)],
+        [key, String(isPostgres() && financialSettings.has(key) ? money(value) : value)],
       )
     }
 

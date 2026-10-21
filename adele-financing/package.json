@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n web,api -c blue,green \"npm:dev:web\" \"npm:dev:api\"",
+    "dev": "vite",
     "dev:web": "vite",
     "dev:api": "node server/index.js",
     "build": "vite build",
@@ -14,21 +14,32 @@
     "verify:csrf": "node scripts/verify-csrf.mjs",
     "verify:startup": "node scripts/verify-startup.mjs",
     "preview": "vite preview",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "test:postgres": "node --experimental-test-module-mocks --test tests/postgres/*.test.mjs",
+    "test:clean-schema": "node --test tests/postgres/clean-setup.test.mjs",
+    "test:cloudflare": "node --test tests/cloudflare.test.mjs",
+    "dev:preview": "vite",
+    "test:integration": "node --experimental-test-module-mocks --test tests/integration/*.test.mjs",
+    "start:railway": "node scripts/start-railway.mjs",
+    "test:deployment": "node --experimental-test-module-mocks --test tests/cloudflare.test.mjs tests/postgres/*.test.mjs tests/integration/*.test.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
+    "decimal.js": "10.6.0",
     "dotenv": "^18.0.3",
     "express": "^5.2.1",
     "multer": "^2.3.0",
     "mysql2": "^3.24.4",
+    "pg": "8.23.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.3",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.11",
+    "@electric-sql/pglite-icu-full": "0.1.0",
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
@@ -39,5 +50,8 @@
     "eslint-plugin-react-refresh": "^0.5.4",
     "globals": "^17.11.0",
     "vite": "^8.2.2"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }

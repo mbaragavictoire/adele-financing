@@ -34,3 +34,11 @@ test-doc.pdf
 .env
 .env.*
 !.env.example
+
+# Local Cloudflare runtime values
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# Local runtime/browser artifacts
+.wrangler/

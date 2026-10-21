@@ -1,44 +1,17 @@
-/**
- * Creates a throwaway super_admin so the Sessions page can be checked in a
- * browser, and prints the credentials. Delete it with:
- *   node scripts/temp-admin.mjs delete
- */
-import bcrypt from 'bcryptjs'
-import '../server/env.js'
-import { initDb, run, queryOne } from '../server/db.js'
+/** Credential-free descriptor for offline preview tests. Never creates database users. */
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const EMAIL = 'temporary-preview@adele.invalid'
-const PASSWORD = 'temporary-preview-pass-7c1e'
+export const syntheticAdminFixture = Object.freeze({
+  kind: 'synthetic-only',
+  id: 'synthetic-admin',
+  displayName: 'Synthetic Preview Administrator',
+  role: 'super_admin',
+  status: 'inactive',
+  canAuthenticate: false,
+})
 
-async function main() {
-  await initDb()
-  const action = process.argv[2] || 'create'
-
-  if (action === 'delete') {
-    const user = await queryOne('SELECT id FROM users WHERE email = ?', [EMAIL])
-    if (!user) {
-      console.log('nothing to remove')
-      return
-    }
-    await run('DELETE FROM sessions WHERE user_id = ?', [user.id])
-    await run('DELETE FROM users WHERE id = ?', [user.id])
-    console.log('removed the throwaway account and its sessions')
-    return
-  }
-
-  const existing = await queryOne('SELECT id FROM users WHERE email = ?', [EMAIL])
-  if (existing) {
-    await run('DELETE FROM sessions WHERE user_id = ?', [existing.id])
-    await run('DELETE FROM users WHERE id = ?', [existing.id])
-  }
-
-  await run(
-    `INSERT INTO users (full_name, email, phone, password_hash, role, status)
-     VALUES (?, ?, ?, ?, 'super_admin', 'active')`,
-    ['Temporary Preview Account', EMAIL, '+250788000999', bcrypt.hashSync(PASSWORD, 12)],
-  )
-  console.log(`email:    ${EMAIL}`)
-  console.log(`password: ${PASSWORD}`)
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  console.error('Database account creation/deletion is disabled. Use offline synthetic fixtures only.')
+  process.exitCode = 1
 }
-
-main()

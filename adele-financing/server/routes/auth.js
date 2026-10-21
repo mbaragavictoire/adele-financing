@@ -100,7 +100,7 @@ router.post('/login', loginRateLimit({ windowMinutes: 15, maxAttempts: 5 }), asy
       },
     })
   } catch (e) {
-    console.error(e)
+    console.error('Authentication request failed', { code: e?.code || 'AUTH_ERROR' })
     res.status(500).json({ error: 'An unexpected error occurred.' })
   }
 })
@@ -122,7 +122,7 @@ router.get('/me', requireAuth, async (req, res) => {
       },
     })
   } catch (e) {
-    console.error(e)
+    console.error('Authentication request failed', { code: e?.code || 'AUTH_ERROR' })
     res.status(500).json({ error: 'An unexpected error occurred.' })
   }
 })
@@ -147,7 +147,7 @@ router.post('/logout', requireAuth, async (req, res) => {
     clearSessionCookie(res)
     res.json({ message: 'Logged out.' })
   } catch (e) {
-    console.error(e)
+    console.error('Authentication request failed', { code: e?.code || 'AUTH_ERROR' })
     // The cookie is cleared regardless, so the browser stops presenting it.
     clearSessionCookie(res)
     res.status(500).json({ error: 'An unexpected error occurred.' })
@@ -207,7 +207,7 @@ router.post('/change-password', requireAuth, async (req, res) => {
       sessionsClosed: closedSessions,
     })
   } catch (e) {
-    console.error(e)
+    console.error('Authentication request failed', { code: e?.code || 'AUTH_ERROR' })
     res.status(500).json({ error: 'An unexpected error occurred.' })
   }
 })

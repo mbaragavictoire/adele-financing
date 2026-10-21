@@ -1,0 +1,10 @@
+# Separate opt-in configuration for an approved protected functional deployment.
+# Existing wrangler.toml stays disabled/synthetic. Never deploy this config without approval.
+name = "adele-postgres-restricted"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-10-19"
+
+[vars]
+API_MODE = "railway-postgres"
+API_STAGE = "postgres-restricted"
+# Configure API_ALLOWED_ORIGIN, API_UPSTREAM and secret API_PROXY_SECRET privately.

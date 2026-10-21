@@ -25,6 +25,8 @@ import Settings from './pages/admin/Settings'
 import AuditLogs from './pages/admin/AuditLogs'
 import Sessions from './pages/admin/Sessions'
 import './App.css'
+import { IS_PREVIEW_ONLY } from './preview.js'
+import { PreviewNotice, PreviewUnavailable } from './components/PreviewNotice.jsx'
 
 function AppRoutes() {
   return (
@@ -69,7 +71,29 @@ function AppRoutes() {
   )
 }
 
+function PreviewRoutes() {
+  return (
+    <>
+      <PreviewNotice />
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="loan-products" element={<LoanProducts />} />
+          <Route path="services" element={<Services />} />
+          <Route path="about" element={<About />} />
+          <Route path="team" element={<Team />} />
+          <Route path="apply" element={<PreviewUnavailable />} />
+          <Route path="contact" element={<PreviewUnavailable />} />
+          <Route path="admin/*" element={<PreviewUnavailable />} />
+          <Route path="*" element={<Home />} />
+        </Route>
+      </Routes>
+    </>
+  )
+}
+
 function App() {
+  if (IS_PREVIEW_ONLY) return <PreviewRoutes />
   return (
     <AuthProvider>
       <AppRoutes />
