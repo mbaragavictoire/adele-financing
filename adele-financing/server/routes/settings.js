@@ -2,7 +2,7 @@ import { money } from '../money.js'
 import { isPostgres } from '../databaseDriver.js'
 const financialSettings = new Set(['opening_cash','equipment_value','owner_capital','liabilities_value'])
 import { Router } from 'express'
-import { queryAll, run } from '../db.js'
+import { queryAll, run } from '#adele-db'
 import { requireAuth, requireRole, handleError } from '../auth.js'
 import { writeAudit } from '../utils.js'
 

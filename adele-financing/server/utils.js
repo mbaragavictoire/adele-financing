@@ -1,4 +1,4 @@
-import { run } from './db.js'
+import { run } from '#adele-db'
 
 export async function writeAudit({
   userId = null,

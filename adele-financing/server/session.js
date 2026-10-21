@@ -26,7 +26,7 @@ import { clientIp } from './clientIp.js'
  * See SESSIONS.md for the full description of the lifecycle.
  */
 import crypto from 'node:crypto'
-import { queryOne, queryAll, run } from './db.js'
+import { queryOne, queryAll, run } from '#adele-db'
 
 export const SESSION_COOKIE = 'adele_session'
 

@@ -21,7 +21,12 @@
     "dev:preview": "vite",
     "test:integration": "node --experimental-test-module-mocks --test tests/integration/*.test.mjs",
     "start:railway": "node scripts/start-railway.mjs",
-    "test:deployment": "node --experimental-test-module-mocks --test tests/cloudflare.test.mjs tests/postgres/*.test.mjs tests/integration/*.test.mjs"
+    "test:deployment": "node --experimental-test-module-mocks --test tests/cloudflare.test.mjs tests/postgres/*.test.mjs tests/integration/*.test.mjs",
+    "test:workers": "node --experimental-test-module-mocks --test tests/workers/*.test.mjs",
+    "test:workers:all": "node --experimental-test-module-mocks --test tests/cloudflare.test.mjs tests/postgres/*.test.mjs tests/integration/*.test.mjs tests/workers/*.test.mjs",
+    "workers:bundle": "node tools/runtime/node_modules/wrangler/bin/wrangler.js deploy --dry-run --config wrangler.workers.toml --outdir server/data/workers-build",
+    "workers:fixture:bundle": "node tools/runtime/node_modules/wrangler/bin/wrangler.js deploy tests/workers/runtime-fixture.js --dry-run --config wrangler.workers.toml --outdir server/data/workers-runtime-fixture",
+    "test:workers:runtime": "node tests/workers/run-runtime.mjs"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -53,5 +58,9 @@
   },
   "engines": {
     "node": "24.x"
+  },
+  "imports": {
+    "#adele-db": "./server/db.js",
+    "#adele-passwords": "./server/passwords.js"
   }
 }

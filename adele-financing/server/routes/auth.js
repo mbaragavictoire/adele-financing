@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import bcrypt from 'bcryptjs'
-import { queryOne, run } from '../db.js'
+import bcrypt from '#adele-passwords'
+import { queryOne, run } from '#adele-db'
 import { requireAuth } from '../auth.js'
 import {
   createSession,
@@ -43,7 +43,8 @@ async function findUserByIdentifier(identifier) {
 
 // Both a wrong password and an unknown account cost the same bcrypt work, so
 // response timing does not reveal which emails are registered.
-const DUMMY_HASH = bcrypt.hashSync('adele-timing-equaliser', 12)
+// Public timing equaliser only, never a stored user credential. Fixed salt avoids startup RNG in Workers.
+const DUMMY_HASH = bcrypt.hashSync('adele-timing-equaliser', '$2b$12$......................')
 
 router.post('/login', loginRateLimit({ windowMinutes: 15, maxAttempts: 5 }), async (req, res) => {
   try {

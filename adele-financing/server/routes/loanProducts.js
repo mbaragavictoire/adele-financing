@@ -2,7 +2,7 @@ import { money } from '../money.js'
 import { isPostgres } from '../databaseDriver.js'
 const financialValue = value => isPostgres() ? money(value) : value
 import { Router } from 'express'
-import { queryAll, queryOne, run } from '../db.js'
+import { queryAll, queryOne, run } from '#adele-db'
 import { requireAuth, requireRole, handleError } from '../auth.js'
 import { writeAudit } from '../utils.js'
 

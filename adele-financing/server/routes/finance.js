@@ -1,7 +1,7 @@
 import { nextBusinessId } from '../businessIds.js'
 import { money, finite, binary, parsedMoney } from '../money.js'
 import { Router } from 'express';
-import { queryAll, queryOne, run } from '../db.js';
+import { queryAll, queryOne, run } from '#adele-db';
 import { requireAuth, requireRole, handleError } from '../auth.js';
 import { writeAudit, } from '../utils.js';
 import { parseQuarter, quarterFromQuery } from '../quarter.js';

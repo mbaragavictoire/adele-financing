@@ -45,7 +45,7 @@ function validIp(value) {
   }
 }
 
-function sessionCookie(header) {
+export function sessionCookie(header) {
   const sessions = String(header || '').split(';')
     .map((part) => part.trim()).filter((part) => part.split('=')[0] === SESSION)
   if (sessions.length > 1) throw new ProxyFailure(400)
@@ -54,7 +54,7 @@ function sessionCookie(header) {
   return sessions[0]
 }
 
-function secureCookies(headers) {
+export function secureCookies(headers) {
   let cookies = []
   if (typeof headers.getSetCookie === 'function') cookies = headers.getSetCookie()
   else if (typeof headers.getAll === 'function') cookies = headers.getAll('Set-Cookie')

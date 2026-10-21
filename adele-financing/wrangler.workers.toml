@@ -1,0 +1,39 @@
+# PREPARATION ONLY. No real Hyperdrive binding, account ID, routes or secrets.
+name = "adele-workers-preparation"
+main = "workers/index.js"
+compatibility_date = "2026-10-21"
+compatibility_flags = ["nodejs_compat", "enable_nodejs_http_server_modules"]
+workers_dev = false
+preview_urls = false
+
+[alias]
+"#adele-db" = "./workers/database.js"
+"#adele-passwords" = "./workers/passwords.js"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = true
+
+[vars]
+ADELE_WORKERS_API_ENABLED = "false"
+ADELE_WORKERS_AUTH_CPU_REVIEWED = "false"
+# Add real API_ALLOWED_ORIGIN only after selecting an approved protected hostname.
+# Bind a new cache-disabled, verify-full Hyperdrive configuration named HYPERDRIVE.
+# Set ADELE_WORKERS_DATABASE_REVIEWED=verify-full-no-cache only after an independent audit.
+
+# Local preparation only. A future approved deployment creates a NEW namespace; not applied here.
+[[durable_objects.bindings]]
+name = "PASSWORD_CPU"
+class_name = "PasswordCpu"
+
+[[migrations]]
+tag = "password-cpu-v1"
+new_sqlite_classes = ["PasswordCpu"]
+
+# After separate approval, replace this placeholder with the reviewed configuration ID.
+# [[hyperdrive]]
+# binding = "HYPERDRIVE"
+# id = "<reviewed-hyperdrive-configuration-id>"
+# Origin TLS must be verify-full with the correct CA; caching.disabled=true.

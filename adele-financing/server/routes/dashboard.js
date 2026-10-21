@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { queryAll, queryOne } from '../db.js'
+import { queryAll, queryOne } from '#adele-db'
 import { requireAuth, handleError } from '../auth.js'
 import { quarterFromQuery } from '../quarter.js'
 

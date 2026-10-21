@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { queryAll } from '../db.js'
+import { queryAll } from '#adele-db'
 import { requireAuth, requireRole, handleError } from '../auth.js'
 
 const router = Router()

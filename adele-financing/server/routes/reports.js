@@ -1,6 +1,6 @@
 import { money } from '../money.js'
 import { Router } from 'express';
-import { queryAll, queryOne } from '../db.js';
+import { queryAll, queryOne } from '#adele-db';
 import { requireAuth, requireRole, handleError } from '../auth.js';
 import { quarterFromQuery } from '../quarter.js';
 const router = Router();

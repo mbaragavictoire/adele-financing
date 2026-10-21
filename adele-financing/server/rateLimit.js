@@ -1,7 +1,7 @@
 import { clientIp } from './clientIp.js'
 export { clientIp }
 import { isPostgres } from './databaseDriver.js'
-import { queryAll, queryOne, run } from './db.js'
+import { queryAll, queryOne, run } from '#adele-db'
 
 // Brute-force protection for credential endpoints.
 //

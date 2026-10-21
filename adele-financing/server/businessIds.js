@@ -1,4 +1,4 @@
-﻿import { queryOne } from './db.js'
+﻿import { queryOne } from '#adele-db'
 import { isPostgres, assertFinancialPolicy } from './databaseDriver.js'
 const refs = {
   customers:['customer_id','CUS'],loan_applications:['application_id','APP'],loans:['loan_id','LON'],

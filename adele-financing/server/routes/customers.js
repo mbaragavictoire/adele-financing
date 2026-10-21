@@ -2,7 +2,7 @@ import { isPostgres } from '../databaseDriver.js'
 import { nextBusinessId } from '../businessIds.js'
 import { money, finite, binary } from '../money.js'
 import { Router } from 'express';
-import { queryAll, queryOne, run } from '../db.js';
+import { queryAll, queryOne, run } from '#adele-db';
 import { requireAuth, requireRole, handleError } from '../auth.js';
 import { writeAudit, genId, isValidRwPhone, rwPhoneFull } from '../utils.js';
 const router = Router();

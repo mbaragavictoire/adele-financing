@@ -1,6 +1,6 @@
 import { Router } from 'express'
-import bcrypt from 'bcryptjs'
-import { queryAll, queryOne, run } from '../db.js'
+import bcrypt from '#adele-passwords'
+import { queryAll, queryOne, run } from '#adele-db'
 import { requireAuth, requireRole, handleError } from '../auth.js'
 import { revokeUserSessions } from '../session.js'
 import { writeAudit, isValidRwPhone, rwPhoneFull } from '../utils.js'

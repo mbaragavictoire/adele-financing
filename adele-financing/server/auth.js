@@ -1,5 +1,5 @@
 import { isPostgres } from './databaseDriver.js'
-import { queryOne } from './db.js'
+import { queryOne } from '#adele-db'
 import { writeAudit } from './utils.js'
 import {
   resolveSession,

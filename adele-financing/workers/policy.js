@@ -1,0 +1,10 @@
+import process from 'node:process'
+// Constant execution profile only: no request secrets or credentials in process.env.
+process.env.DB_DRIVER='postgres'
+process.env.ADELE_DEPLOYMENT_MODE='postgres-restricted'
+process.env.TZ='UTC'
+process.env.PG_TIME_ZONE='UTC'
+process.env.SESSION_COOKIE_SECURE='true'
+process.env.SESSION_COOKIE_SAMESITE='strict'
+process.env.ADELE_PG_FINANCIAL_POLICY=''
+process.env.ADELE_PG_SEARCH_REVIEWED=''
