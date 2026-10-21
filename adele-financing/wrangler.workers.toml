@@ -1,4 +1,4 @@
-# PREPARATION ONLY. No real Hyperdrive binding, account ID, routes or secrets.
+# PREPARATION ONLY. Hyperdrive ID is public configuration; no account credentials or routes.
 name = "adele-workers-preparation"
 main = "workers/index.js"
 compatibility_date = "2026-10-21"
@@ -20,7 +20,7 @@ run_worker_first = true
 ADELE_WORKERS_API_ENABLED = "false"
 ADELE_WORKERS_AUTH_CPU_REVIEWED = "false"
 # Add real API_ALLOWED_ORIGIN only after selecting an approved protected hostname.
-# Bind a new cache-disabled, verify-full Hyperdrive configuration named HYPERDRIVE.
+# Audit the bound Hyperdrive configuration for disabled caching and verify-full TLS.
 # Set ADELE_WORKERS_DATABASE_REVIEWED=verify-full-no-cache only after an independent audit.
 
 # Local preparation only. A future approved deployment creates a NEW namespace; not applied here.
@@ -32,8 +32,8 @@ class_name = "PasswordCpu"
 tag = "password-cpu-v1"
 new_sqlite_classes = ["PasswordCpu"]
 
-# After separate approval, replace this placeholder with the reviewed configuration ID.
-# [[hyperdrive]]
-# binding = "HYPERDRIVE"
-# id = "<reviewed-hyperdrive-configuration-id>"
+# Existing configuration: adele-supabase-test (remote settings not verified here).
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "9cd33dc5a7ef42b58379d8cceabe24ca"
 # Origin TLS must be verify-full with the correct CA; caching.disabled=true.
