@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { api, apiGet, formatDate } from '../../admin/api.js'
 import { RoleChip, StatusBadge, Empty, Loading, PhoneInput } from '../../admin/ui.jsx'
+import { useI18n } from '../../i18n/index.jsx'
 
 const ROLES = ['super_admin', 'loan_officer', 'finance_officer', 'manager']
 
@@ -14,6 +15,7 @@ const emptyUser = {
 }
 
 function Users() {
+  const { t } = useI18n()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -115,7 +117,7 @@ function Users() {
       <div className="admin-toolbar">
         <div className="spacer" />
         <button className="admin-btn admin-btn-primary" onClick={openNew}>
-          + Add Staff
+          {t('users.add')}
         </button>
       </div>
 
@@ -125,19 +127,19 @@ function Users() {
         {loading ? (
           <Loading />
         ) : rows.length === 0 ? (
-          <Empty message="No staff users." />
+          <Empty message={t('users.empty')} />
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                  <th>Actions</th>
+                  <th>{t('users.name')}</th>
+                  <th>{t('users.email')}</th>
+                  <th>{t('users.phone')}</th>
+                  <th>{t('users.role')}</th>
+                  <th>{t('ui.status')}</th>
+                  <th>{t('users.created')}</th>
+                  <th>{t('ui.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -151,17 +153,17 @@ function Users() {
                     <td>{formatDate(u.created_at)}</td>
                     <td>
                       <button className="admin-btn-ghost" onClick={() => openEdit(u)}>
-                        Edit
+                        {t('users.edit')}
                       </button>
                       <button className="admin-btn-ghost" onClick={() => toggleStatus(u)}>
-                        {u.status === 'active' ? 'Deactivate' : 'Activate'}
+                        {u.status === 'active' ? t('users.deactivate') : t('users.activate')}
                       </button>
                       <button
                         className="admin-btn-ghost"
                         style={{ color: '#dc2626' }}
                         onClick={() => setConfirmDelete(u)}
                       >
-                        Delete
+                        {t('users.delete')}
                       </button>
                     </td>
                   </tr>
@@ -176,7 +178,7 @@ function Users() {
         <div className="admin-modal-overlay" onClick={() => setEditing(false)}>
           <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-head">
-              <h2>{isNew ? 'Add Staff User' : 'Edit Staff User'}</h2>
+              <h2>{isNew ? t('users.addTitle') : t('users.editTitle')}</h2>
               <button className="admin-modal-close" onClick={() => setEditing(false)}>
                 ✕
               </button>
@@ -185,7 +187,7 @@ function Users() {
               {error && <div className="admin-alert admin-alert-error">{error}</div>}
               <div className="admin-form-grid">
                 <div className="admin-form-group">
-                  <label>Full Name</label>
+                  <label>{t('users.fullName')}</label>
                   <input
                     className="admin-input"
                     value={form.full_name}
@@ -193,7 +195,7 @@ function Users() {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Email</label>
+                  <label>{t('users.email')}</label>
                   <input
                     className="admin-input"
                     type="email"
@@ -202,7 +204,7 @@ function Users() {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Phone</label>
+                  <label>{t('users.phone')}</label>
                   <PhoneInput
                     className="admin-input"
                     value={form.phone}
@@ -211,7 +213,7 @@ function Users() {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Role</label>
+                  <label>{t('users.role')}</label>
                   <select
                     className="admin-select"
                     value={form.role}
@@ -219,37 +221,37 @@ function Users() {
                   >
                     {ROLES.map((r) => (
                       <option key={r} value={r}>
-                        {r.replace(/_/g, ' ')}
+                        {t(`role.${r}`)}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div className="admin-form-group">
-                  <label>Status</label>
+                  <label>{t('ui.status')}</label>
                   <select
                     className="admin-select"
                     value={form.status}
                     onChange={(e) => change('status', e.target.value)}
                   >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="active">{t('status.active')}</option>
+                    <option value="inactive">{t('status.inactive')}</option>
                   </select>
                 </div>
                 <div className="admin-form-group">
-                  <label>{isNew ? 'Password' : 'New Password (optional)'}</label>
+                  <label>{isNew ? t('users.password') : t('users.newPassword')}</label>
                   <input
                     className="admin-input"
                     type="password"
                     value={form.password}
                     onChange={(e) => change('password', e.target.value)}
-                    placeholder={isNew ? 'Set password' : 'Leave blank to keep'}
+                    placeholder={isNew ? t('users.setPassword') : t('users.keepPassword')}
                   />
                 </div>
               </div>
             </div>
             <div className="admin-modal-foot">
               <button className="admin-btn" onClick={() => setEditing(false)}>
-                Cancel
+                {t('ui.cancel')}
               </button>
               <button
                 className="admin-btn admin-btn-primary"
@@ -261,7 +263,7 @@ function Users() {
                   (isNew && !form.password)
                 }
               >
-                {busy ? 'Saving…' : 'Save User'}
+                {busy ? t('users.saving') : t('users.save')}
               </button>
             </div>
           </div>
@@ -272,28 +274,28 @@ function Users() {
         <div className="admin-modal-overlay" onClick={() => setConfirmDelete(null)}>
           <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-head">
-              <h2>Delete User</h2>
+              <h2>{t('users.deleteTitle')}</h2>
               <button className="admin-modal-close" onClick={() => setConfirmDelete(null)}>
                 ✕
               </button>
             </div>
             <div className="admin-modal-body">
               <p>
-                Are you sure you want to delete{' '}
-                <strong>{confirmDelete.full_name}</strong> ({confirmDelete.email})?
-                This cannot be undone.
+                {t('users.deleteConfirmPrefix')}{' '}
+                <strong>{confirmDelete.full_name}</strong> ({confirmDelete.email})?{' '}
+                {t('users.deleteConfirmSuffix')}
               </p>
             </div>
             <div className="admin-modal-foot">
               <button className="admin-btn" onClick={() => setConfirmDelete(null)}>
-                Cancel
+                {t('ui.cancel')}
               </button>
               <button
                 className="admin-btn admin-btn-danger"
                 onClick={() => doDelete(confirmDelete)}
                 disabled={busy}
               >
-                {busy ? 'Deleting…' : 'Delete'}
+                {busy ? t('users.deleting') : t('users.delete')}
               </button>
             </div>
           </div>

@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { apiGet, formatCurrency, formatDate } from '../../admin/api.js'
 import { StatusBadge, Empty, Loading } from '../../admin/ui.jsx'
+import { useI18n } from '../../i18n/index.jsx'
 
 function Payments() {
+  const { t } = useI18n()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -25,8 +27,8 @@ function Payments() {
   }, [search, type])
 
   useEffect(() => {
-    const t = setTimeout(load, 300)
-    return () => clearTimeout(t)
+    const timer = setTimeout(load, 300)
+    return () => clearTimeout(timer)
   }, [load])
 
   const total = rows.reduce((s, p) => s + Number(p.amount), 0)
@@ -36,7 +38,7 @@ function Payments() {
       <div className="admin-toolbar">
         <input
           className="admin-input admin-input-sm"
-          placeholder="Search payments…"
+          placeholder={t('payments.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -46,12 +48,14 @@ function Payments() {
           value={type}
           onChange={(e) => setType(e.target.value)}
         >
-          <option value="">All types</option>
-          <option value="disbursement">Disbursement</option>
-          <option value="repayment">Repayment</option>
+          <option value="">{t('payments.allTypes')}</option>
+          <option value="disbursement">{t('status.disbursement')}</option>
+          <option value="repayment">{t('status.repayment')}</option>
         </select>
         <div className="spacer" />
-        <strong style={{ fontSize: 15 }}>Total: {formatCurrency(total)}</strong>
+        <strong style={{ fontSize: 15 }}>
+          {t('payments.total', { amount: formatCurrency(total) })}
+        </strong>
       </div>
 
       {error && <div className="admin-alert admin-alert-error">{error}</div>}
@@ -60,19 +64,19 @@ function Payments() {
         {loading ? (
           <Loading />
         ) : rows.length === 0 ? (
-          <Empty message="No payment activity." />
+          <Empty message={t('payments.empty')} />
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Payment ID</th>
-                  <th>Type</th>
-                  <th>Customer</th>
-                  <th>Amount</th>
-                  <th>Date</th>
-                  <th>Method</th>
-                  <th>Reference</th>
+                  <th>{t('payments.paymentId')}</th>
+                  <th>{t('payments.type')}</th>
+                  <th>{t('payments.customer')}</th>
+                  <th>{t('ui.amount')}</th>
+                  <th>{t('ui.date')}</th>
+                  <th>{t('payments.method')}</th>
+                  <th>{t('payments.reference')}</th>
                 </tr>
               </thead>
               <tbody>

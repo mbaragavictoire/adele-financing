@@ -2,13 +2,25 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext.jsx'
 import { navItemsFor, canAccess } from './api.js'
-import { ROLE_LABELS } from './api.js'
+import { ROLE_LABELS, ROLE_LABEL_KEYS } from './api.js'
+import LanguageSelector from '../components/LanguageSelector'
+import { useI18n } from '../i18n/index.jsx'
 import logo from '../assets/adele-logo-hd.jpg'
 import './admin.css'
+
+function useRoleLabel() {
+  const { t } = useI18n()
+  return (role) => {
+    const key = ROLE_LABEL_KEYS[role]
+    return key ? t(key) : ROLE_LABELS[role] || role
+  }
+}
 
 function AdminLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const { t } = useI18n()
+  const roleLabel = useRoleLabel()
   const [open, setOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
 
@@ -37,8 +49,8 @@ function AdminLayout() {
         <div className="admin-sidebar-brand">
           <img src={logo} alt="Adele Financing" />
           <div>
-            <h3>ADELE Financing</h3>
-            <span>Loan Management System</span>
+            <h3>{t('admin.brand')}</h3>
+            <span>{t('admin.subtitle')}</span>
           </div>
         </div>
 
@@ -51,7 +63,7 @@ function AdminLayout() {
               onClick={() => setOpen(false)}
             >
               <span className="nav-dot" />
-              <span> {item.label}</span>
+              <span> {item.labelKey ? t(item.labelKey) : item.label}</span>
             </NavLink>
           ))}
         </nav>
@@ -61,11 +73,9 @@ function AdminLayout() {
             <div className="admin-sidebar-avatar">{initials}</div>
             <div>
               <div className="admin-sidebar-user-name">
-                {user?.full_name || 'Staff'}
+                {user?.full_name || t('admin.staff')}
               </div>
-              <div className="admin-sidebar-user-role">
-                {ROLE_LABELS[user?.role] || user?.role}
-              </div>
+              <div className="admin-sidebar-user-role">{roleLabel(user?.role)}</div>
             </div>
           </div>
           <button
@@ -74,7 +84,7 @@ function AdminLayout() {
             onClick={handleLogout}
             disabled={loggingOut}
           >
-            {loggingOut ? 'Logging out…' : 'Logout'}
+            {loggingOut ? t('admin.loggingOut') : t('admin.logout')}
           </button>
         </div>
       </aside>
@@ -86,13 +96,12 @@ function AdminLayout() {
             className="admin-btn admin-mobile-toggle"
             onClick={() => setOpen(true)}
           >
-            ☰ Menu
+            ☰ {t('admin.menu')}
           </button>
-          <h1>Loan Management System</h1>
+          <h1>{t('admin.headerTitle')}</h1>
           <div className="admin-header-right">
-            <span className="admin-badge">
-              {ROLE_LABELS[user?.role] || user?.role}
-            </span>
+            <LanguageSelector variant="admin" />
+            <span className="admin-badge">{roleLabel(user?.role)}</span>
           </div>
         </header>
 
@@ -105,8 +114,9 @@ function AdminLayout() {
 }
 
 export function RequireRole({ children, role, path }) {
+  const { t } = useI18n()
   if (!canAccess(role, path)) {
-    return <div className="admin-empty">You do not have access to this page.</div>
+    return <div className="admin-empty">{t('admin.noAccess')}</div>
   }
   return children
 }

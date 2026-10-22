@@ -153,9 +153,37 @@
   color: var(--blue);
 }
 
-@media (max-width: 860px) {
+/* Right-hand group: navigation links plus the desktop language selector. */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.navbar-lang-desktop {
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+}
+
+/* The selector inside the mobile menu is hidden until the menu opens. */
+.nav-lang {
+  display: none;
+  width: 100%;
+  padding-top: 12px;
+}
+
+@media (max-width: 980px) {
   .nav-toggle {
     display: block;
+  }
+
+  .navbar-lang-desktop {
+    display: none;
+  }
+
+  .nav-lang {
+    display: flex;
   }
 
   .nav-links {

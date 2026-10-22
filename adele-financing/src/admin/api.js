@@ -1,6 +1,8 @@
 // When the frontend is hosted separately from the API (e.g. Vercel), set
 // VITE_API_URL to the public API origin. Leave it empty when both are served
 // from the same origin (local dev proxy or the API server itself).
+import { formatLocale } from '../i18n/locale.js'
+
 const API_ORIGIN = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
 
 // The signed-in staff member is identified by an HttpOnly session cookie that
@@ -78,20 +80,23 @@ export const apiGet = (path, params) => {
 }
 
 export function formatCurrency(value) {
-  return new Intl.NumberFormat('en-RW', {
+  return new Intl.NumberFormat(formatLocale(), {
     maximumFractionDigits: 0,
   }).format(Number(value || 0))
 }
 
 export function formatDate(value) {
   if (!value) return '-'
-  return new Date(value).toLocaleDateString('en-GB', {
+  return new Date(value).toLocaleDateString(formatLocale(), {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
   })
 }
 
+// Display labels are translated at render time. `label` is kept as the English
+// fallback so any code that still reads it directly keeps working, while
+// `labelKey` drives the translated text.
 export const ROLE_LABELS = {
   super_admin: 'Super Admin',
   loan_officer: 'Loan Officer',
@@ -99,21 +104,28 @@ export const ROLE_LABELS = {
   manager: 'Manager',
 }
 
+export const ROLE_LABEL_KEYS = {
+  super_admin: 'role.super_admin',
+  loan_officer: 'role.loan_officer',
+  finance_officer: 'role.finance_officer',
+  manager: 'role.manager',
+}
+
 export const ADMIN_NAVIGATION = [
-  { to: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
-  { to: '/admin/messages', label: 'Messages', icon: '📨' },
-  { to: '/admin/customers', label: 'Customers', icon: '👥' },
-  { to: '/admin/loan-applications', label: 'Loan Applications', icon: '📝' },
-  { to: '/admin/loan-products', label: 'Loan Products', icon: '🏷️' },
-  { to: '/admin/loans', label: 'Loans', icon: '💰' },
-  { to: '/admin/repayments', label: 'Repayments', icon: '↩️' },
-  { to: '/admin/payments', label: 'Payments', icon: '💳' },
-  { to: '/admin/reports', label: 'Reports', icon: '📈' },
-  { to: '/admin/finance', label: 'Finance', icon: '💹' },
-  { to: '/admin/users', label: 'Staff / Users', icon: '🛡️' },
-  { to: '/admin/sessions', label: 'Sessions', icon: '🔐' },
-  { to: '/admin/settings', label: 'Settings', icon: '⚙️' },
-  { to: '/admin/audit-logs', label: 'Audit Logs', icon: '📋' },
+  { to: '/admin/dashboard', label: 'Dashboard', labelKey: 'admin.nav.dashboard', icon: '📊' },
+  { to: '/admin/messages', label: 'Messages', labelKey: 'admin.nav.messages', icon: '📨' },
+  { to: '/admin/customers', label: 'Customers', labelKey: 'admin.nav.customers', icon: '👥' },
+  { to: '/admin/loan-applications', label: 'Loan Applications', labelKey: 'admin.nav.loanApplications', icon: '📝' },
+  { to: '/admin/loan-products', label: 'Loan Products', labelKey: 'admin.nav.loanProducts', icon: '🏷️' },
+  { to: '/admin/loans', label: 'Loans', labelKey: 'admin.nav.loans', icon: '💰' },
+  { to: '/admin/repayments', label: 'Repayments', labelKey: 'admin.nav.repayments', icon: '↩️' },
+  { to: '/admin/payments', label: 'Payments', labelKey: 'admin.nav.payments', icon: '💳' },
+  { to: '/admin/reports', label: 'Reports', labelKey: 'admin.nav.reports', icon: '📈' },
+  { to: '/admin/finance', label: 'Finance', labelKey: 'admin.nav.finance', icon: '💹' },
+  { to: '/admin/users', label: 'Staff / Users', labelKey: 'admin.nav.users', icon: '🛡️' },
+  { to: '/admin/sessions', label: 'Sessions', labelKey: 'admin.nav.sessions', icon: '🔐' },
+  { to: '/admin/settings', label: 'Settings', labelKey: 'admin.nav.settings', icon: '⚙️' },
+  { to: '/admin/audit-logs', label: 'Audit Logs', labelKey: 'admin.nav.auditLogs', icon: '📋' },
 ]
 
 export const ADMIN_PERMISSIONS = {

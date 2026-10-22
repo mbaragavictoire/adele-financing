@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { apiGet, formatCurrency, formatDate } from '../../admin/api.js'
 import { Empty, Loading } from '../../admin/ui.jsx'
+import { useI18n } from '../../i18n/index.jsx'
 
 function Repayments() {
+  const { t } = useI18n()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -23,8 +25,8 @@ function Repayments() {
   }, [search])
 
   useEffect(() => {
-    const t = setTimeout(load, 300)
-    return () => clearTimeout(t)
+    const timer = setTimeout(load, 300)
+    return () => clearTimeout(timer)
   }, [load])
 
   const total = rows.reduce((s, r) => s + Number(r.amount), 0)
@@ -34,13 +36,13 @@ function Repayments() {
       <div className="admin-toolbar">
         <input
           className="admin-input admin-input-sm"
-          placeholder="Search repayments…"
+          placeholder={t('repayments.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <div className="spacer" />
         <strong style={{ fontSize: 15 }}>
-          Total: {formatCurrency(total)}
+          {t('repayments.total', { amount: formatCurrency(total) })}
         </strong>
       </div>
 
@@ -50,19 +52,19 @@ function Repayments() {
         {loading ? (
           <Loading />
         ) : rows.length === 0 ? (
-          <Empty message="No repayments recorded." />
+          <Empty message={t('repayments.empty')} />
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Repayment ID</th>
-                  <th>Loan ID</th>
-                  <th>Customer</th>
-                  <th>Amount</th>
-                  <th>Date</th>
-                  <th>Method</th>
-                  <th>Reference</th>
+                  <th>{t('repayments.repaymentId')}</th>
+                  <th>{t('repayments.loanId')}</th>
+                  <th>{t('repayments.customer')}</th>
+                  <th>{t('ui.amount')}</th>
+                  <th>{t('ui.date')}</th>
+                  <th>{t('repayments.method')}</th>
+                  <th>{t('repayments.reference')}</th>
                 </tr>
               </thead>
               <tbody>

@@ -1,74 +1,61 @@
 import { Link } from 'react-router-dom'
 import moneyBg from '../assets/money-bg.jpg'
+import { useI18n } from '../i18n/index.jsx'
 import '../pages.css'
 
+// Each title/text below holds a message key resolved with `t()` at render
+// time; the translated strings live in src/i18n/messages/public-about.js.
 const values = [
   {
-    title: 'Integrity',
-    text: 'Conduct all activities ethically, transparently, and honestly.',
+    title: 'about.values.integrity.title',
+    text: 'about.values.integrity.text',
   },
   {
-    title: 'Responsibility',
-    text: 'Take accountability for all services to benefit clients and stakeholders.',
+    title: 'about.values.responsibility.title',
+    text: 'about.values.responsibility.text',
   },
   {
-    title: 'Client-Centricity',
-    text: 'Prioritize client needs with tailored financial solutions.',
+    title: 'about.values.clientCentricity.title',
+    text: 'about.values.clientCentricity.text',
   },
   {
-    title: 'Innovation',
-    text: 'Embrace creative, efficient, and forward-thinking solutions.',
+    title: 'about.values.innovation.title',
+    text: 'about.values.innovation.text',
   },
   {
-    title: 'Excellence',
-    text: 'Deliver the highest standards in service, operations, and compliance.',
+    title: 'about.values.excellence.title',
+    text: 'about.values.excellence.text',
   },
   {
-    title: 'Compliance',
-    text: 'Strictly adhere to BNR regulations and best industry practices.',
+    title: 'about.values.compliance.title',
+    text: 'about.values.compliance.text',
   },
   {
-    title: 'Sustainability',
-    text: 'Ensure services contribute to long-term economic and social growth.',
+    title: 'about.values.sustainability.title',
+    text: 'about.values.sustainability.text',
   },
 ]
 
 function About() {
+  const { t } = useI18n()
+
   return (
     <>
       <section className="page-head">
         <div className="container">
-          <h1>About Us</h1>
-          <p>
-            ADELE Financing Company Ltd — your trusted partner for responsible
-            financing.
-          </p>
+          <h1>{t('nav.about')}</h1>
+          <p>{t('about.subtitle')}</p>
         </div>  
       </section>
 
       <section>
         <div className="container">
           <div className="section-head">
-            <div className="section-label">Who we are</div>
-            <h2>About ADELE Financing</h2>
-            <p>
-              ADELE Financing Company Ltd is a Non-Deposit Taking Financial
-              Service Provider (NDTFS) licensed by BNR which provides reliable
-              and responsible financing solutions to individuals, entrepreneurs,
-              and businesses.
-            </p>
-            <p>
-              We offer affordable loan products designed to support personal
-              needs, business growth, and productive activities through
-              transparent, professional, and customer-focused services.
-            </p>
-            <p>
-              ADELE is committed to promoting financial inclusion by providing
-              accessible financing, responsible lending, and quality customer
-              support while complying with applicable regulations. Our goal is
-              to empower customers, support business development, and contribute
-              to sustainable economic growth.
-            </p>
+            <div className="section-label">{t('about.whoWeAre')}</div>
+            <h2>{t('about.heading')}</h2>
+            <p>{t('about.p1')}</p>
+            <p>{t('about.p2')}</p>
+            <p>{t('about.p3')}</p>
           </div>
         </div>
       </section>
@@ -77,20 +64,15 @@ function About() {
         <div className="container">
           <div className="contact-grid">
             <div className="value-card" style={{ textAlign: 'left' }}>
-              <div className="section-label">Our Mission</div>
+              <div className="section-label">{t('about.missionLabel')}</div>
               <p style={{ fontStyle: 'italic', fontSize: 17 }}>
-                “To provide responsible, transparent, and innovative financial
-                solutions that empower individuals and businesses, promote
-                sustainable economic growth, and uphold the highest standards of
-                integrity and regulatory compliance.”
+                {t('about.mission')}
               </p>
             </div>
             <div className="value-card" style={{ textAlign: 'left' }}>
-              <div className="section-label">Our Vision</div>
+              <div className="section-label">{t('about.visionLabel')}</div>
               <p style={{ fontStyle: 'italic', fontSize: 17 }}>
-                “To be Rwanda’s most trusted and innovative financial service
-                provider, empowering clients and businesses with ethical,
-                transparent, and sustainable financial solutions.”
+                {t('about.vision')}
               </p>
             </div>
           </div>
@@ -100,15 +82,15 @@ function About() {
       <section>
         <div className="container">
           <div className="section-head">
-            <div className="section-label">Our core values</div>
-            <h2>What guides everything we do</h2>
+            <div className="section-label">{t('about.valuesLabel')}</div>
+            <h2>{t('about.valuesHeading')}</h2>
           </div>
           <div className="features">
             {values.map((v) => (
               <div className="feature-card" key={v.title}>
                 <div className="feature-icon">✓</div>
-                <h3>{v.title}</h3>
-                <p>{v.text}</p>
+                <h3>{t(v.title)}</h3>
+                <p>{t(v.text)}</p>
               </div>
             ))}
           </div>
@@ -118,18 +100,13 @@ function About() {
       <section className="alt-bg">
         <div className="container">
           <div className="section-head">
-            <div className="section-label">Our commitment</div>
-            <h2>How we serve our clients</h2>
-            <p>
-              “Providing responsible, innovative, and client-focused financial
-              services to individuals and businesses, including credit
-              facilities, financial advisory, and tailored financial solutions,
-              while ensuring full compliance with regulatory requirements.”
-            </p>
+            <div className="section-label">{t('about.commitmentLabel')}</div>
+            <h2>{t('about.commitmentHeading')}</h2>
+            <p>{t('about.commitment')}</p>
           </div>
           <div style={{ textAlign: 'center' }}>
             <Link to="/contact" className="btn btn-primary">
-              Contact Us
+              {t('nav.contact')}
             </Link>
           </div>
         </div>
@@ -142,13 +119,10 @@ function About() {
         }}
       >
         <div className="container">
-          <h2>Want to work with us?</h2>
-          <p>
-            Start your loan application today and see how responsible financing
-            can help you grow.
-          </p>
+          <h2>{t('about.cta.title')}</h2>
+          <p>{t('about.cta.text')}</p>
           <Link to="/apply" className="btn btn-gold">
-            Apply Now
+            {t('nav.apply')}
           </Link>
         </div>
       </section>

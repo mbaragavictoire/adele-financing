@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { api, apiGet, apiUrl, formatCurrency, formatDate, CREDENTIALS } from '../../admin/api.js'
 import { StatusBadge, Empty, Loading } from '../../admin/ui.jsx'
 import { useAuth } from '../../admin/AuthContext.jsx'
+import { useI18n } from '../../i18n/index.jsx'
 
 const emptyApp = {
   customer_id: '',
@@ -12,6 +13,7 @@ const emptyApp = {
 }
 
 function LoanApplications() {
+  const { t } = useI18n()
   const { user } = useAuth()
   const [rows, setRows] = useState([])
   const [customers, setCustomers] = useState([])
@@ -212,7 +214,7 @@ function LoanApplications() {
       <div className="admin-toolbar">
         <input
           className="admin-input admin-input-sm"
-          placeholder="Search application, customer…"
+          placeholder={t('loanapplications.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -222,17 +224,17 @@ function LoanApplications() {
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         >
-          <option value="">All statuses</option>
-          <option value="pending">Pending</option>
-          <option value="under_review">Under Review</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-          <option value="cancelled">Cancelled</option>
+          <option value="">{t('loanapplications.allStatuses')}</option>
+          <option value="pending">{t('status.pending')}</option>
+          <option value="under_review">{t('status.under_review')}</option>
+          <option value="approved">{t('status.approved')}</option>
+          <option value="rejected">{t('status.rejected')}</option>
+          <option value="cancelled">{t('status.cancelled')}</option>
         </select>
         <div className="spacer" />
         {canManage && (
           <button className="admin-btn admin-btn-primary" onClick={openCreate}>
-            + New Application
+            + {t('loanapplications.newApplication')}
           </button>
         )}
       </div>
@@ -243,20 +245,20 @@ function LoanApplications() {
         {loading ? (
           <Loading />
         ) : rows.length === 0 ? (
-          <Empty message="No loan applications." />
+          <Empty message={t('loanapplications.noApplications')} />
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Application</th>
-                  <th>Customer</th>
-                  <th>Product</th>
-                  <th>Amount</th>
-                  <th>Period</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                  <th>Actions</th>
+                  <th>{t('loanapplications.application')}</th>
+                  <th>{t('loanapplications.customer')}</th>
+                  <th>{t('loanapplications.product')}</th>
+                  <th>{t('loanapplications.amount')}</th>
+                  <th>{t('loanapplications.period')}</th>
+                  <th>{t('loanapplications.status')}</th>
+                  <th>{t('loanapplications.date')}</th>
+                  <th>{t('loanapplications.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -304,7 +306,7 @@ function LoanApplications() {
         <div className="admin-modal-overlay" onClick={() => setShowCreate(false)}>
           <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-head">
-              <h2>New Loan Application</h2>
+              <h2>{t('loanapplications.newLoanApplication')}</h2>
               <button className="admin-modal-close" onClick={() => setShowCreate(false)}>
                 ✕
               </button>
@@ -313,13 +315,13 @@ function LoanApplications() {
               {error && <div className="admin-alert admin-alert-error">{error}</div>}
               <div className="admin-form-grid">
                 <div className="admin-form-group">
-                  <label>Customer</label>
+                  <label>{t('loanapplications.customer')}</label>
                   <select
                     className="admin-select"
                     value={form.customer_id}
                     onChange={(e) => change('customer_id', e.target.value)}
                   >
-                    <option value="">Select customer</option>
+                    <option value="">{t('loanapplications.customerSelect')}</option>
                     {customers.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.full_name} ({c.customer_id})
@@ -328,13 +330,13 @@ function LoanApplications() {
                   </select>
                 </div>
                 <div className="admin-form-group">
-                  <label>Loan Product</label>
+                  <label>{t('loanapplications.loanProduct')}</label>
                   <select
                     className="admin-select"
                     value={form.loan_product_id}
                     onChange={(e) => change('loan_product_id', e.target.value)}
                   >
-                    <option value="">Select product</option>
+                    <option value="">{t('loanapplications.productSelect')}</option>
                     {products.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
@@ -343,7 +345,7 @@ function LoanApplications() {
                   </select>
                 </div>
                 <div className="admin-form-group">
-                  <label>Requested Amount (RWF)</label>
+                  <label>{t('loanapplications.requestedAmount')}</label>
                   <input
                     className="admin-input"
                     inputMode="numeric"
@@ -354,7 +356,7 @@ function LoanApplications() {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Period (months)</label>
+                  <label>{t('loanapplications.periodMonths')}</label>
                   <input
                     className="admin-input"
                     inputMode="numeric"
@@ -365,7 +367,7 @@ function LoanApplications() {
                   />
                 </div>
                 <div className="admin-form-group" style={{ gridColumn: '1 / -1' }}>
-                  <label>Purpose</label>
+                  <label>{t('loanapplications.purpose')}</label>
                   <textarea
                     className="admin-textarea"
                     rows="3"
@@ -377,14 +379,14 @@ function LoanApplications() {
             </div>
             <div className="admin-modal-foot">
               <button className="admin-btn" onClick={() => setShowCreate(false)}>
-                Cancel
+                {t('loanapplications.cancel')}
               </button>
               <button
                 className="admin-btn admin-btn-primary"
                 onClick={createApp}
                 disabled={busy || !form.customer_id || !form.loan_product_id || !form.requested_amount || !form.duration}
               >
-                {busy ? 'Saving…' : 'Create Application'}
+                {busy ? t('loanapplications.saving') : t('loanapplications.createApplication')}
               </button>
             </div>
           </div>
@@ -397,10 +399,10 @@ function LoanApplications() {
           <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-head">
               <h2>
-                {action._kind === 'review' && 'Review Application'}
-                {action._kind === 'approve' && 'Approve Application'}
-                {action._kind === 'reject' && 'Reject Application'}
-                {action._kind === 'disburse' && 'Disburse Loan'}
+                {action._kind === 'review' && t('loanapplications.reviewApplication')}
+                {action._kind === 'approve' && t('loanapplications.approveApplication')}
+                {action._kind === 'reject' && t('loanapplications.rejectApplication')}
+                {action._kind === 'disburse' && t('loanapplications.disburseLoan')}
               </h2>
               <button className="admin-modal-close" onClick={() => setAction(null)}>
                 ✕
@@ -410,19 +412,19 @@ function LoanApplications() {
               {error && <div className="admin-alert admin-alert-error">{error}</div>}
               <div className="admin-detail" style={{ marginBottom: 18 }}>
                 <div>
-                  <div className="label">Application</div>
+                  <div className="label">{t('loanapplications.application')}</div>
                   <div className="value">{action.application_id}</div>
                 </div>
                 <div>
-                  <div className="label">Customer</div>
+                  <div className="label">{t('loanapplications.customer')}</div>
                   <div className="value">{action.customer_name}</div>
                 </div>
                 <div>
-                  <div className="label">Product</div>
+                  <div className="label">{t('loanapplications.product')}</div>
                   <div className="value">{action.product_name}</div>
                 </div>
                 <div>
-                  <div className="label">Requested</div>
+                  <div className="label">{t('loanapplications.requested')}</div>
                   <div className="value">{formatCurrency(action.requested_amount)}</div>
                 </div>
               </div>
@@ -503,7 +505,7 @@ function LoanApplications() {
                   {action._kind === 'approve' && (
                     <>
                       <div className="admin-form-group">
-                        <label>Approved Period (months)</label>
+                        <label>{t('loanapplications.approvedPeriod')}</label>
                         <input
                           className="admin-input"
                           inputMode="numeric"
@@ -517,7 +519,7 @@ function LoanApplications() {
                         />
                       </div>
                       <div className="admin-form-group">
-                        <label>Interest Rate (%)</label>
+                        <label>{t('loanapplications.interestRate')}</label>
                         <input
                           className="admin-input"
                           inputMode="numeric"
@@ -535,7 +537,7 @@ function LoanApplications() {
                   {action._kind === 'disburse' && (
                     <>
                       <div className="admin-form-group">
-                        <label>Date of Loan</label>
+                        <label>{t('loanapplications.dateOfLoan')}</label>
                         <input
                           className="admin-input"
                           type="date"
@@ -549,7 +551,7 @@ function LoanApplications() {
                         />
                       </div>
                       <div className="admin-form-group">
-                        <label>Payment Method</label>
+                        <label>{t('loanapplications.paymentMethod')}</label>
                         <select
                           className="admin-select"
                           value={disburseForm.payment_method}
@@ -560,14 +562,14 @@ function LoanApplications() {
                             }))
                           }
                         >
-                          <option>Bank Transfer</option>
-                          <option>Mobile Money</option>
-                          <option>Cash</option>
-                          <option>Cheque</option>
+                          <option value="Bank Transfer">{t('loanapplications.bankTransfer')}</option>
+                          <option value="Mobile Money">{t('loanapplications.mobileMoney')}</option>
+                          <option value="Cash">{t('loanapplications.cash')}</option>
+                          <option value="Cheque">{t('loanapplications.cheque')}</option>
                         </select>
                       </div>
                       <div className="admin-form-group">
-                        <label>Reference Number</label>
+                        <label>{t('loanapplications.referenceNumber')}</label>
                         <input
                           className="admin-input"
                           value={disburseForm.reference_number}
@@ -586,13 +588,13 @@ function LoanApplications() {
 
               {action._kind === 'reject' && (
                 <div className="admin-form-group">
-                  <label>Rejection Reason</label>
+                  <label>{t('loanapplications.rejectionReason')}</label>
                   <textarea
                     className="admin-textarea"
                     rows="3"
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
-                    placeholder="Explain why this application is rejected"
+                    placeholder={t('loanapplications.explainReject')}
                   />
                 </div>
               )}

@@ -1,0 +1,47 @@
+// Strings for the admin Messages page (src/pages/admin/Messages.jsx).
+// The "New"/"Read" tab labels reuse the shared `status.new` / `status.read`
+// keys, and the table headers reuse `ui.date` / `ui.status`.
+export default {
+  en: {
+    'messages.tabAll': 'All',
+    'messages.tabArchived': 'Archived',
+    'messages.searchPlaceholder': 'Search name, email, subject…',
+    'messages.reply': 'Reply',
+    'messages.markUnread': 'Mark unread',
+    'messages.restore': 'Restore',
+    'messages.archive': 'Archive',
+    'messages.close': 'Close',
+    'messages.empty': 'No messages in this view.',
+    'messages.from': 'From',
+    'messages.subject': 'Subject',
+    'messages.open': 'Open',
+  },
+  rw: {
+    'messages.tabAll': 'Byose',
+    'messages.tabArchived': 'Baturitswe',
+    'messages.searchPlaceholder': 'Shakisha izina, imeyili, akataro…',
+    'messages.reply': 'Subiramo igitekerezo',
+    'messages.markUnread': 'Kugaragaza nk\'ubutumwa butasomwe',
+    'messages.restore': 'Subiza',
+    'messages.archive': 'Tunga',
+    'messages.close': 'Funga',
+    'messages.empty': 'Nta butumwa buboneka mu buryo buno.',
+    'messages.from': 'Biva',
+    'messages.subject': 'Akataro',
+    'messages.open': 'Fungura',
+  },
+  fr: {
+    'messages.tabAll': 'Tous',
+    'messages.tabArchived': 'Archivés',
+    'messages.searchPlaceholder': 'Rechercher un nom, un e-mail, un sujet…',
+    'messages.reply': 'Répondre',
+    'messages.markUnread': 'Marquer comme non lu',
+    'messages.restore': 'Restaurer',
+    'messages.archive': 'Archiver',
+    'messages.close': 'Fermer',
+    'messages.empty': 'Aucun message dans cette vue.',
+    'messages.from': 'De',
+    'messages.subject': 'Sujet',
+    'messages.open': 'Ouvrir',
+  },
+}

@@ -1,14 +1,25 @@
 import { Navigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from './AuthContext.jsx'
-import { ADMIN_PERMISSIONS, ROLE_LABELS } from './api.js'
+import { ADMIN_PERMISSIONS, ROLE_LABELS, ROLE_LABEL_KEYS } from './api.js'
 import AdminLayout from './AdminLayout.jsx'
+import { useI18n } from '../i18n/index.jsx'
+
+function useRoleLabel() {
+  const { t } = useI18n()
+  return (role) => {
+    const key = ROLE_LABEL_KEYS[role]
+    if (key) return t(key)
+    return ROLE_LABELS[role] || role || t('admin.unknownRole')
+  }
+}
 
 export function AdminRoute({ children }) {
   const { user, loading } = useAuth()
+  const { t } = useI18n()
   const location = useLocation()
 
   if (loading) {
-    return <div className="admin-loader">Loading…</div>
+    return <div className="admin-loader">{t('ui.loading')}</div>
   }
 
   // Unauthenticated visitors are sent to Staff Login. This only hides the UI;
@@ -22,17 +33,16 @@ export function AdminRoute({ children }) {
 
 export function Forbidden() {
   const { user } = useAuth()
+  const { t } = useI18n()
+  const roleLabel = useRoleLabel()
   return (
     <div className="admin-loader">
       <div className="admin-alert admin-alert-error" style={{ maxWidth: '32rem' }}>
-        <h2 style={{ marginTop: 0 }}>403 — Access denied</h2>
-        <p>
-          Your role ({ROLE_LABELS[user?.role] || user?.role || 'unknown'}) does not have
-          permission to open this page.
-        </p>
-        <p>If you believe this is wrong, ask a Super Admin to review your access level.</p>
+        <h2 style={{ marginTop: 0 }}>{t('admin.forbiddenTitle')}</h2>
+        <p>{t('admin.forbiddenRole', { role: roleLabel(user?.role) })}</p>
+        <p>{t('admin.forbiddenHint')}</p>
         <Link className="btn btn-primary" to="/admin/dashboard">
-          Back to dashboard
+          {t('admin.backToDashboard')}
         </Link>
       </div>
     </div>

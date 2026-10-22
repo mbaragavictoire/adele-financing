@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { apiGet, formatDate } from '../../admin/api.js'
 import { Empty, Loading } from '../../admin/ui.jsx'
+import { useI18n } from '../../i18n/index.jsx'
 
 function AuditLogs() {
+  const { t } = useI18n()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -30,8 +32,8 @@ function AuditLogs() {
   }, [search, action])
 
   useEffect(() => {
-    const t = setTimeout(load, 300)
-    return () => clearTimeout(t)
+    const timer = setTimeout(load, 300)
+    return () => clearTimeout(timer)
   }, [load])
 
   return (
@@ -39,7 +41,7 @@ function AuditLogs() {
       <div className="admin-toolbar">
         <input
           className="admin-input admin-input-sm"
-          placeholder="Search user, description…"
+          placeholder={t('auditlogs.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -49,7 +51,7 @@ function AuditLogs() {
           value={action}
           onChange={(e) => setAction(e.target.value)}
         >
-          <option value="">All actions</option>
+          <option value="">{t('auditlogs.allActions')}</option>
           {Object.keys(actionCounts).sort().map((a) => (
             <option key={a} value={a}>
               {a} ({actionCounts[a]})
@@ -64,17 +66,17 @@ function AuditLogs() {
         {loading ? (
           <Loading />
         ) : rows.length === 0 ? (
-          <Empty message="No audit log entries." />
+          <Empty message={t('auditlogs.empty')} />
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Date / Time</th>
-                  <th>User</th>
-                  <th>Action</th>
-                  <th>Description</th>
-                  <th>Record</th>
+                  <th>{t('auditlogs.dateTime')}</th>
+                  <th>{t('auditlogs.user')}</th>
+                  <th>{t('auditlogs.action')}</th>
+                  <th>{t('auditlogs.description')}</th>
+                  <th>{t('auditlogs.record')}</th>
                 </tr>
               </thead>
               <tbody>

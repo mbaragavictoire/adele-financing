@@ -1,31 +1,20 @@
 import { Link } from 'react-router-dom'
 import moneyBg from '../assets/money-bg.jpg'
+import { useI18n } from '../i18n/index.jsx'
 import '../pages.css'
 
+// Stored as message-key pairs so the text follows the selected language.
 const benefits = [
-  {
-    title: 'Responsible Lending',
-    text: 'We assess each loan application carefully to provide suitable financing solutions.',
-  },
-  {
-    title: 'Fast and Transparent Process',
-    text: 'We provide clear loan conditions and efficient application procedures.',
-  },
-  {
-    title: 'Customer-Focused Solutions',
-    text: 'Our products are designed to respond to the real financial needs of our customers.',
-  },
-  {
-    title: 'Professional Credit Management',
-    text: 'Our experienced team ensures proper loan assessment and monitoring.',
-  },
-  {
-    title: 'Confidentiality and Compliance',
-    text: 'We protect customer information and operate according to regulatory requirements.',
-  },
+  { title: 'home.benefit.responsible.title', text: 'home.benefit.responsible.text' },
+  { title: 'home.benefit.fast.title', text: 'home.benefit.fast.text' },
+  { title: 'home.benefit.customer.title', text: 'home.benefit.customer.text' },
+  { title: 'home.benefit.credit.title', text: 'home.benefit.credit.text' },
+  { title: 'home.benefit.confidential.title', text: 'home.benefit.confidential.text' },
 ]
 
 function Home() {
+  const { t } = useI18n()
+
   return (
     <div
       className="home-bg"
@@ -40,27 +29,23 @@ function Home() {
         <div className="container">
           <div>
             <h1>
-              Your Trusted Partner for <span>Financial Growth</span>
+              {t('home.heroTitle1')}
+              <span>{t('home.heroTitle2')}</span>
             </h1>
             <p>
-            ADELE Financing Company Ltd is a Non-Deposit Taking Financial Service Provider (NDTFS)
-licensed by BNR which providing reliable and responsible financing solutions to individuals,
-entrepreneurs, and businesses.<br /><br/>
-
-We offer affordable loan products designed to support personal needs, business growth, and productive
-activities through transparent, professional, and customer-focused services.
-ADELE is committed to promoting financial inclusion by providing accessible financing, responsible
-lending, and quality customer support while complying with applicable regulations. <br/><br/>
-
-Our goal is to empower customers, support business development, and contribute to sustainable
-economic growth.
+              {t('home.heroBody1')}
+              <br />
+              <br />
+              {t('home.heroBody2')} <br />
+              <br />
+              {t('home.heroBody3')}
             </p>
           </div>
 
           <div className="hero-stats">
             <div className="hero-stat">
               <strong>NDTFS</strong>
-              <span>Licensed by BNR</span>
+              <span>{t('home.statLabel')}</span>
             </div>
           </div>
         </div>
@@ -69,15 +54,15 @@ economic growth.
       <section className="alt-bg">
         <div className="container">
           <div className="section-head">
-            <div className="section-label">Why choose ADELE</div>
-            <h2>Reasons to work with us</h2>
+            <div className="section-label">{t('home.whyLabel')}</div>
+            <h2>{t('home.whyHeading')}</h2>
           </div>
           <div className="steps">
             {benefits.map((b) => (
               <div className="step-card" key={b.title}>
                 <div className="step-num">✓</div>
-                <h3>{b.title}</h3>
-                <p>{b.text}</p>
+                <h3>{t(b.title)}</h3>
+                <p>{t(b.text)}</p>
               </div>
             ))}
           </div>
@@ -93,13 +78,10 @@ economic growth.
         }}
       >
         <div className="container">
-          <h2>Ready to get started?</h2>
-          <p>
-            Complete your loan application and let us help you reach your
-            financial goals. Your trusted partner for responsible financing.
-          </p>
+          <h2>{t('home.ctaHeading')}</h2>
+          <p>{t('home.ctaText')}</p>
           <Link to="/apply" className="btn btn-gold">
-            Apply Now
+            {t('nav.apply')}
           </Link>
         </div>
       </section>

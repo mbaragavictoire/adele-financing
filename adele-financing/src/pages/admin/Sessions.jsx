@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { api, formatDate } from '../../admin/api.js'
 import { Empty, Loading } from '../../admin/ui.jsx'
 import { useAuth } from '../../admin/AuthContext.jsx'
+import { useI18n } from '../../i18n/index.jsx'
 
 /**
  * Session management, Super Admin only.
@@ -12,6 +13,7 @@ import { useAuth } from '../../admin/AuthContext.jsx'
  */
 function Sessions() {
   const { user } = useAuth()
+  const { t } = useI18n()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -32,8 +34,8 @@ function Sessions() {
   useEffect(() => {
     // Deferred by a tick, matching the other admin pages: calling load()
     // directly inside the effect body sets state synchronously.
-    const t = setTimeout(load, 0)
-    return () => clearTimeout(t)
+    const timer = setTimeout(load, 0)
+    return () => clearTimeout(timer)
   }, [load])
 
   async function revokeOne(id) {
@@ -53,8 +55,8 @@ function Sessions() {
 
   async function revokeAllFor(accountUserId, fullName, keepOwn) {
     const warning = keepOwn
-      ? `Close every other active session for ${fullName}?\n\nYour own session on this device stays signed in.`
-      : `Close every active session for ${fullName}?\n\nThis includes your own session, so you will be asked to sign in again.`
+      ? t('sessions.confirmRevokeOthers', { name: fullName })
+      : t('sessions.confirmRevokeAll', { name: fullName })
     if (!window.confirm(warning)) return
 
     setBusy(`user:${accountUserId}`)
@@ -83,7 +85,7 @@ function Sessions() {
       <div className="admin-toolbar">
         <span className="spacer" />
         <button className="admin-btn" onClick={load} type="button">
-          Refresh
+          {t('sessions.refresh')}
         </button>
       </div>
 
@@ -92,30 +94,32 @@ function Sessions() {
 
       <div className="admin-panel">
         <div className="admin-panel-head">
-          <h2>Currently signed in ({active.length})</h2>
+          <h2>{t('sessions.activeHeading', { count: active.length })}</h2>
           <small>
-            Idle timeout {policy.idleMinutes ?? '—'} min · maximum{' '}
-            {policy.absoluteHours ?? '—'} h · up to {policy.maxSessionsPerUser ?? '—'}{' '}
-            simultaneous sessions per account
+            {t('sessions.policy', {
+              idle: policy.idleMinutes ?? '—',
+              absolute: policy.absoluteHours ?? '—',
+              max: policy.maxSessionsPerUser ?? '—',
+            })}
           </small>
         </div>
         <div className="admin-panel-body">
         {loading ? (
           <Loading />
         ) : active.length === 0 ? (
-          <Empty message="Nobody is currently signed in." />
+          <Empty message={t('sessions.emptyActive')} />
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Staff member</th>
-                  <th>Role</th>
-                  <th>Device</th>
-                  <th>IP address</th>
-                  <th>Signed in</th>
-                  <th>Last activity</th>
-                  <th>Actions</th>
+                  <th>{t('sessions.staffMember')}</th>
+                  <th>{t('sessions.role')}</th>
+                  <th>{t('sessions.device')}</th>
+                  <th>{t('sessions.ipAddress')}</th>
+                  <th>{t('sessions.signedIn')}</th>
+                  <th>{t('sessions.lastActivity')}</th>
+                  <th>{t('ui.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -129,7 +133,9 @@ function Sessions() {
                         <>
                           {' '}
                           <span className="status-badge status-pending">
-                            {s.status === 'suspended' ? 'Suspended' : 'Inactive'}
+                            {s.status === 'suspended'
+                              ? t('sessions.suspended')
+                              : t('status.inactive')}
                           </span>
                         </>
                       )}
@@ -141,7 +147,7 @@ function Sessions() {
                     </td>
                     <td>{s.device}</td>
                     <td>
-                      <code>{s.ip || 'unknown'}</code>
+                      <code>{s.ip || t('sessions.unknownIp')}</code>
                     </td>
                     <td>{formatDate(s.created_at)}</td>
                     <td>{formatDate(s.last_seen_at)}</td>
@@ -152,7 +158,7 @@ function Sessions() {
                         disabled={busy === s.id}
                         onClick={() => revokeOne(s.id)}
                       >
-                        {busy === s.id ? 'Closing…' : 'Revoke'}
+                        {busy === s.id ? t('sessions.closing') : t('sessions.revoke')}
                       </button>{' '}
                       <button
                         className="admin-btn-ghost"
@@ -166,7 +172,7 @@ function Sessions() {
                           )
                         }
                       >
-                        Close all for this account
+                        {t('sessions.closeAllForAccount')}
                       </button>
                     </td>
                   </tr>
@@ -180,21 +186,21 @@ function Sessions() {
 
       <div className="admin-panel">
         <div className="admin-panel-head">
-          <h2>Recently closed</h2>
+          <h2>{t('sessions.recentlyClosed')}</h2>
         </div>
         <div className="admin-panel-body">
         {closed.length === 0 ? (
-          <Empty message="No sessions have been closed yet." />
+          <Empty message={t('sessions.emptyClosed')} />
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Staff member</th>
-                  <th>Role</th>
-                  <th>IP address</th>
-                  <th>Closed</th>
-                  <th>Reason</th>
+                  <th>{t('sessions.staffMember')}</th>
+                  <th>{t('sessions.role')}</th>
+                  <th>{t('sessions.ipAddress')}</th>
+                  <th>{t('sessions.closed')}</th>
+                  <th>{t('sessions.reason')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -207,7 +213,7 @@ function Sessions() {
                     </td>
                     <td>{String(s.role || '').replace(/_/g, ' ')}</td>
                     <td>
-                      <code>{s.ip || 'unknown'}</code>
+                      <code>{s.ip || t('sessions.unknownIp')}</code>
                     </td>
                     <td>{formatDate(s.revoked_at)}</td>
                     <td>{s.revoke_reason || '-'}</td>

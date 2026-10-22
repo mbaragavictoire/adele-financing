@@ -1,15 +1,17 @@
 import { useEffect, useState, useCallback } from 'react'
 import { api, apiGet, formatDate } from '../../admin/api.js'
 import { Empty, Loading } from '../../admin/ui.jsx'
+import { useI18n } from '../../i18n/index.jsx'
 
 const TABS = [
-  { key: '', label: 'All' },
-  { key: 'new', label: 'New' },
-  { key: 'read', label: 'Read' },
-  { key: 'archived', label: 'Archived' },
+  { key: '', labelKey: 'messages.tabAll' },
+  { key: 'new', labelKey: 'status.new' },
+  { key: 'read', labelKey: 'status.read' },
+  { key: 'archived', labelKey: 'messages.tabArchived' },
 ]
 
 function Messages() {
+  const { t } = useI18n()
   const [messages, setMessages] = useState([])
   const [counts, setCounts] = useState({ total: 0, new: 0, read: 0, archived: 0 })
   const [tab, setTab] = useState('new')
@@ -36,8 +38,8 @@ function Messages() {
   }, [tab, search])
 
   useEffect(() => {
-    const t = setTimeout(load, 300)
-    return () => clearTimeout(t)
+    const timer = setTimeout(load, 300)
+    return () => clearTimeout(timer)
   }, [load])
 
   async function setStatus(msg, status) {
@@ -69,20 +71,20 @@ function Messages() {
     <>
       <div className="admin-toolbar">
         <div className="admin-tabs" role="tablist">
-          {TABS.map((t) => (
+          {TABS.map((tabItem) => (
             <button
-              key={t.key}
+              key={tabItem.key}
               type="button"
-              className={`admin-tab ${tab === t.key ? 'active' : ''}`}
-              onClick={() => setTab(t.key)}
+              className={`admin-tab ${tab === tabItem.key ? 'active' : ''}`}
+              onClick={() => setTab(tabItem.key)}
             >
-              {t.label} ({countFor(t.key)})
+              {t(tabItem.labelKey)} ({countFor(tabItem.key)})
             </button>
           ))}
         </div>
         <input
           className="admin-input admin-input-sm"
-          placeholder="Search name, email, subject…"
+          placeholder={t('messages.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -105,7 +107,7 @@ function Messages() {
                 className="admin-btn"
                 href={`mailto:${open.email}?subject=Re: ${encodeURIComponent(open.subject)}`}
               >
-                ✉️ Reply
+                ✉️ {t('messages.reply')}
               </a>
               {open.status !== 'new' && (
                 <button
@@ -114,7 +116,9 @@ function Messages() {
                   disabled={busyId === open.id}
                   onClick={() => setStatus(open, 'new')}
                 >
-                  {open.status === 'read' ? 'Mark unread' : 'Restore'}
+                  {open.status === 'read'
+                    ? t('messages.markUnread')
+                    : t('messages.restore')}
                 </button>
               )}
               {open.status !== 'archived' ? (
@@ -124,7 +128,7 @@ function Messages() {
                   disabled={busyId === open.id}
                   onClick={() => setStatus(open, 'archived')}
                 >
-                  Archive
+                  {t('messages.archive')}
                 </button>
               ) : null}
               <button
@@ -132,7 +136,7 @@ function Messages() {
                 className="admin-btn"
                 onClick={() => setOpen(null)}
               >
-                Close
+                {t('messages.close')}
               </button>
             </div>
           </div>
@@ -144,16 +148,16 @@ function Messages() {
         {loading ? (
           <Loading />
         ) : messages.length === 0 ? (
-          <Empty message="No messages in this view." />
+          <Empty message={t('messages.empty')} />
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>From</th>
-                  <th>Subject</th>
-                  <th>Status</th>
+                  <th>{t('ui.date')}</th>
+                  <th>{t('messages.from')}</th>
+                  <th>{t('messages.subject')}</th>
+                  <th>{t('ui.status')}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -179,7 +183,7 @@ function Messages() {
                         disabled={busyId === m.id}
                         onClick={() => openMessage(m)}
                       >
-                        Open
+                        {t('messages.open')}
                       </button>
                     </td>
                   </tr>

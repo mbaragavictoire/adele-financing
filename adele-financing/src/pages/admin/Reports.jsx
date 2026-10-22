@@ -2,16 +2,17 @@ import { useEffect, useState, useCallback } from 'react'
 import { apiGet, formatCurrency, formatDate } from '../../admin/api.js'
 import { Empty, Loading } from '../../admin/ui.jsx'
 import { useAuth } from '../../admin/AuthContext.jsx'
+import { useI18n } from '../../i18n/index.jsx'
 
 const TABS = [
-  { key: 'customers', label: 'Customers', path: '/reports/customers', cols: ['customer_id','registration_date','full_name','phone_number','gender','status'] },
-  { key: 'applications', label: 'Applications', path: '/reports/applications', cols: ['application_id','customer_name','product_name','requested_amount','duration','status','application_date'] },
-  { key: 'approved', label: 'Approved', path: '/reports/approved', cols: ['application_id','customer_name','approved_amount','approved_duration','interest_rate','approved_at'] },
-  { key: 'rejected', label: 'Rejected', path: '/reports/rejected', cols: ['application_id','customer_name','requested_amount','rejection_reason','rejected_at'] },
-  { key: 'loans', label: 'Loans', path: '/reports/loans', cols: ['loan_id','customer_name','principal','interest','total_payable','amount_paid','outstanding_balance','status'] },
-  { key: 'outstanding', label: 'Outstanding', path: '/reports/outstanding', cols: ['loan_id','customer_name','total_payable','amount_paid','outstanding_balance','due_date'] },
-  { key: 'completed', label: 'Completed', path: '/reports/completed', cols: ['loan_id','customer_name','principal','total_payable','amount_paid','start_date','due_date'] },
-  { key: 'repayments', label: 'Repayments', path: '/reports/repayments', cols: ['repayment_id','customer_name','loan_id','amount','payment_date','payment_method','reference_number'] },
+  { key: 'customers', label: 'reports.customers', path: '/reports/customers', cols: ['customer_id','registration_date','full_name','phone_number','gender','status'] },
+  { key: 'applications', label: 'reports.applications', path: '/reports/applications', cols: ['application_id','customer_name','product_name','requested_amount','duration','status','application_date'] },
+  { key: 'approved', label: 'reports.approved', path: '/reports/approved', cols: ['application_id','customer_name','approved_amount','approved_duration','interest_rate','approved_at'] },
+  { key: 'rejected', label: 'reports.rejected', path: '/reports/rejected', cols: ['application_id','customer_name','requested_amount','rejection_reason','rejected_at'] },
+  { key: 'loans', label: 'reports.loans', path: '/reports/loans', cols: ['loan_id','customer_name','principal','interest','total_payable','amount_paid','outstanding_balance','status'] },
+  { key: 'outstanding', label: 'reports.outstanding', path: '/reports/outstanding', cols: ['loan_id','customer_name','total_payable','amount_paid','outstanding_balance','due_date'] },
+  { key: 'completed', label: 'reports.completed', path: '/reports/completed', cols: ['loan_id','customer_name','principal','total_payable','amount_paid','start_date','due_date'] },
+  { key: 'repayments', label: 'reports.repayments', path: '/reports/repayments', cols: ['repayment_id','customer_name','loan_id','amount','payment_date','payment_method','reference_number'] },
 ]
 
 // Neutralises HTML metacharacters so database content is rendered as text.
@@ -32,40 +33,41 @@ function escapeHtml(value) {
 }
 
 const COLUMN_LABELS = {
-  customer_id: 'Customer ID',
-  full_name: 'Full Name',
-  phone_number: 'Phone',
-  gender: 'Gender',
-  status: 'Status',
-  registration_date: 'Date',
-  application_id: 'Application',
-  customer_name: 'Customer',
-  product_name: 'Product',
-  requested_amount: 'Requested',
-  duration: 'Period',
-  application_date: 'Date',
-  approved_amount: 'Approved Amount',
-  approved_duration: 'Period',
-  interest_rate: 'Interest %',
-  approved_at: 'Approved Date',
-  rejection_reason: 'Reason',
-  rejected_at: 'Rejected Date',
-  loan_id: 'Loan ID',
-  principal: 'Principal',
-  interest: 'Interest',
-  total_payable: 'Total Payable',
-  amount_paid: 'Paid',
-  outstanding_balance: 'Balance',
-  start_date: 'Start',
-  due_date: 'Due',
-  repayment_id: 'Repayment',
-  payment_date: 'Date',
-  payment_method: 'Method',
-  reference_number: 'Reference',
+  customer_id: 'reports.col.customerId',
+  full_name: 'reports.col.fullName',
+  phone_number: 'reports.col.phone',
+  gender: 'reports.col.gender',
+  status: 'ui.status',
+  registration_date: 'ui.date',
+  application_id: 'reports.col.application',
+  customer_name: 'reports.col.customer',
+  product_name: 'reports.col.product',
+  requested_amount: 'reports.col.requested',
+  duration: 'reports.col.period',
+  application_date: 'ui.date',
+  approved_amount: 'reports.col.approvedAmount',
+  approved_duration: 'reports.col.period',
+  interest_rate: 'reports.col.interestRate',
+  approved_at: 'reports.col.approvedAt',
+  rejection_reason: 'reports.col.reason',
+  rejected_at: 'reports.col.rejectedAt',
+  loan_id: 'reports.col.loanId',
+  principal: 'reports.col.principal',
+  interest: 'reports.col.interest',
+  total_payable: 'reports.col.totalPayable',
+  amount_paid: 'status.paid',
+  outstanding_balance: 'reports.col.balance',
+  start_date: 'reports.col.start',
+  due_date: 'reports.col.due',
+  repayment_id: 'reports.col.repayment',
+  payment_date: 'ui.date',
+  payment_method: 'reports.col.method',
+  reference_number: 'reports.col.reference',
 }
 
 function Reports() {
   const { user } = useAuth()
+  const { t } = useI18n()
   const canFinance = ['super_admin', 'finance_officer'].includes(user?.role)
   const [tab, setTab] = useState(canFinance ? 'repayments' : 'customers')
   const [rows, setRows] = useState([])
@@ -74,13 +76,13 @@ function Reports() {
   const [to, setTo] = useState('')
   const [error, setError] = useState('')
 
-  const visibleTabs = canFinance ? TABS : TABS.filter((t) => t.key !== 'repayments')
+  const visibleTabs = canFinance ? TABS : TABS.filter((tabItem) => tabItem.key !== 'repayments')
 
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      const active = visibleTabs.find((t) => t.key === tab)
+      const active = visibleTabs.find((tabItem) => tabItem.key === tab)
       const params = {}
       if (from) params.from = from
       if (to) params.to = to
@@ -94,11 +96,11 @@ function Reports() {
   }, [tab, from, to, visibleTabs])
 
   useEffect(() => {
-    const t = setTimeout(load, 0)
-    return () => clearTimeout(t)
+    const timer = setTimeout(load, 0)
+    return () => clearTimeout(timer)
   }, [load])
 
-  const activeTab = visibleTabs.find((t) => t.key === tab)
+  const activeTab = visibleTabs.find((tabItem) => tabItem.key === tab)
 
   function printReport() {
     const win = window.open('', '_blank')
@@ -106,10 +108,10 @@ function Reports() {
     // Every value below originates from the database, and applicant names can be
     // submitted by anonymous visitors through the public form. Escaping is what
     // stops a crafted name from executing as script in this same-origin window.
-    const head = `<h1>ADELE Financing — ${escapeHtml(activeTab.label)} Report</h1>`
+    const head = `<h1>ADELE Financing — ${escapeHtml(t('reports.printTitle', { tab: t(activeTab.label) }))}</h1>`
     const dateRange =
       from || to
-        ? `<p>Period: ${escapeHtml(from || 'start')} → ${escapeHtml(to || 'today')}</p>`
+        ? `<p>${escapeHtml(t('reports.period'))}: ${escapeHtml(from || t('reports.periodStart'))} → ${escapeHtml(to || t('reports.periodToday'))}</p>`
         : ''
     const printCss = `
       @media print {
@@ -127,7 +129,7 @@ function Reports() {
       <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;width:100%">
         <thead>
           <tr>${activeTab.cols
-            .map((c) => `<th>${escapeHtml(COLUMN_LABELS[c] || c)}</th>`)
+            .map((c) => `<th>${escapeHtml(COLUMN_LABELS[c] ? t(COLUMN_LABELS[c]) : c)}</th>`)
             .join('')}</tr>
         </thead>
         <tbody>
@@ -152,7 +154,7 @@ function Reports() {
         </tbody>
       </table>`
     win.document.write(`
-      <html><head><title>${escapeHtml(activeTab.label)} Report</title>
+      <html><head><title>${escapeHtml(t('reports.printTitle', { tab: t(activeTab.label) }))}</title>
       <style>${printCss}</style></head>
       <body>${head}${dateRange}${table}
       <script>window.print()</script></body></html>`)
@@ -167,14 +169,14 @@ function Reports() {
       if (/^[=+\-@\t\r]/.test(value)) value = `'${value}`
       return `"${value.replace(/"/g, '""')}"`
     }
-    const header = activeTab.cols.map((c) => csvCell(COLUMN_LABELS[c] || c)).join(',')
+    const header = activeTab.cols.map((c) => csvCell(COLUMN_LABELS[c] ? t(COLUMN_LABELS[c]) : c)).join(',')
     const lines = rows.map((r) => activeTab.cols.map((c) => csvCell(r[c])).join(','))
     const csv = [header, ...lines].join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${activeTab.label}-report.csv`
+    a.download = `${t(activeTab.label)}-report.csv`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -182,13 +184,13 @@ function Reports() {
   return (
     <>
       <div className="admin-tabs">
-        {visibleTabs.map((t) => (
+        {visibleTabs.map((tabItem) => (
           <button
-            key={t.key}
-            className={`admin-tab ${tab === t.key ? 'active' : ''}`}
-            onClick={() => setTab(t.key)}
+            key={tabItem.key}
+            className={`admin-tab ${tab === tabItem.key ? 'active' : ''}`}
+            onClick={() => setTab(tabItem.key)}
           >
-            {t.label}
+            {t(tabItem.label)}
           </button>
         ))}
       </div>
@@ -211,10 +213,10 @@ function Reports() {
         />
         <div className="spacer" />
         <button className="admin-btn" onClick={exportCsv} disabled={rows.length === 0}>
-          ⬇ Export CSV
+          ⬇ {t('reports.exportCsv')}
         </button>
         <button className="admin-btn" onClick={printReport} disabled={rows.length === 0}>
-          🖨 Print
+          🖨 {t('reports.print')}
         </button>
       </div>
 
@@ -224,14 +226,14 @@ function Reports() {
         {loading ? (
           <Loading />
         ) : rows.length === 0 ? (
-          <Empty message="No data for this report." />
+          <Empty message={t('reports.empty')} />
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
                   {activeTab.cols.map((c) => (
-                    <th key={c}>{COLUMN_LABELS[c] || c}</th>
+                    <th key={c}>{COLUMN_LABELS[c] ? t(COLUMN_LABELS[c]) : c}</th>
                   ))}
                 </tr>
               </thead>

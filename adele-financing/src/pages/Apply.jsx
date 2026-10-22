@@ -4,6 +4,7 @@ import { PhoneInput } from '../admin/ui.jsx'
 import { isValidRwPhone, rwPhoneFull } from '../admin/phone.js'
 import { isValidName, stripInvalidNameChars } from '../admin/name.js'
 import { apiUrl } from '../admin/api.js'
+import { useI18n } from '../i18n/index.jsx'
 
 const initialForm = {
   first: '',
@@ -18,6 +19,7 @@ const initialForm = {
 }
 
 function Apply() {
+  const { t } = useI18n()
   const [form, setForm] = useState(initialForm)
   const [files, setFiles] = useState([])
   const [submitted, setSubmitted] = useState(false)
@@ -66,45 +68,45 @@ function Apply() {
     const next = {}
 
     if (!form.first.trim()) {
-      next.first = 'First name is required.'
+      next.first = t('apply.firstRequired')
     } else if (!isValidName(form.first)) {
-      next.first = 'First name may only contain letters (no numbers or symbols).'
+      next.first = t('apply.firstInvalid')
     }
     if (!form.last.trim()) {
-      next.last = 'Last name is required.'
+      next.last = t('apply.lastRequired')
     } else if (!isValidName(form.last)) {
-      next.last = 'Last name may only contain letters (no numbers or symbols).'
+      next.last = t('apply.lastInvalid')
     }
 
     if (!form.email.trim()) {
-      next.email = 'Email address is required.'
+      next.email = t('apply.emailRequired')
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      next.email = 'Please enter a valid email address.'
+      next.email = t('apply.emailInvalid')
     }
 
     if (!form.phone.trim()) {
-      next.phone = 'Phone number is required.'
+      next.phone = t('apply.phoneRequired')
     } else if (!isValidRwPhone(form.phone)) {
-      next.phone = 'Please enter a valid 9-digit phone number.'
+      next.phone = t('apply.phoneInvalid')
     }
 
     if (!form.amount.trim()) {
-      next.amount = 'Loan amount is required.'
+      next.amount = t('apply.amountRequired')
     } else if (Number(form.amount) < 1000) {
-      next.amount = 'Loan amount must be at least 1,000 RWF.'
+      next.amount = t('apply.amountMin')
     }
 
-    if (!form.loanType) next.loanType = 'Please select a loan type.'
+    if (!form.loanType) next.loanType = t('apply.loanTypeRequired')
 
-    if (!form.date) next.date = 'Date of application is required.'
+    if (!form.date) next.date = t('apply.dateRequired')
     else if (!/^\d{4}-\d{2}-\d{2}$/.test(form.date)) {
-      next.date = 'Please enter a valid date.'
+      next.date = t('apply.dateInvalid')
     }
 
     if (!form.monthly) {
-      next.monthly = 'Period of payment is required.'
+      next.monthly = t('apply.periodRequired')
     } else if (Number(form.monthly) < 1 || Number(form.monthly) > 24) {
-      next.monthly = 'Period of payment cannot be more than 24 months.'
+      next.monthly = t('apply.periodMax')
     }
 
     return next
@@ -133,7 +135,7 @@ function Apply() {
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) {
-        throw new Error(data?.error || 'Could not submit your application. Please try again.')
+        throw new Error(data?.error || t('apply.submitFailed'))
       }
       setReference(data.application_id)
       setSubmitted(true)
@@ -153,11 +155,8 @@ function Apply() {
     <>
       <section className="page-head">
         <div className="container">
-          <h1>Apply for a Loan</h1>
-          <p>
-            Complete the form below and our team will get back to you with next
-            steps. Applying takes less than 5 minutes.
-          </p>
+          <h1>{t('apply.title')}</h1>
+          <p>{t('apply.subtitle')}</p>
         </div>
       </section>
 
@@ -165,26 +164,26 @@ function Apply() {
         <div className="container">
           <div className="apply-steps">
             <div className="apply-step">
-              <h4>📝 1. Apply online</h4>
-              <p>Fill in your details below — it takes less than 5 minutes and costs nothing.</p>
+              <h4>📝 1. {t('apply.step1Title')}</h4>
+              <p>{t('apply.step1Text')}</p>
             </div>
             <div className="apply-step">
-              <h4>👩‍💼 2. We review</h4>
-              <p>Our team confirms your documents and checks your application within one business day.</p>
+              <h4>👩‍💼 2. {t('apply.step2Title')}</h4>
+              <p>{t('apply.step2Text')}</p>
             </div>
             <div className="apply-step">
-              <h4>💰 3. Get funded</h4>
-              <p>Once approved, your loan is disbursed quickly to your bank account or mobile money.</p>
+              <h4>💰 3. {t('apply.step3Title')}</h4>
+              <p>{t('apply.step3Text')}</p>
             </div>
           </div>
 
           {submitted && (
             <div className="form-note form-note-success">
-              <h3>Thank you! Your application has been received.</h3>
+              <h3>{t('apply.successTitle')}</h3>
               <p>
-                Reference number: <strong>{reference}</strong>
+                {t('apply.referenceLabel')} <strong>{reference}</strong>
               </p>
-              <p>Your documents were attached and our team will contact you within one business day.</p>
+              <p>{t('apply.successText')}</p>
             </div>
           )}
           {serverError && (
@@ -195,13 +194,13 @@ function Apply() {
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="form-group">
-              <h2 style={{ marginTop: 0 }}>Loan Application</h2>
-              <p style={{ marginBottom: 8 }}>Tell us a little about yourself.</p>
+              <h2 style={{ marginTop: 0 }}>{t('apply.formTitle')}</h2>
+              <p style={{ marginBottom: 8 }}>{t('apply.formIntro')}</p>
             </div>
 
             <div className="form-grid">
               <div className="form-group">
-                <label htmlFor="first">First name</label>
+                <label htmlFor="first">{t('apply.firstName')}</label>
                 <input
                   id="first"
                   name="first"
@@ -214,7 +213,7 @@ function Apply() {
                 {errors.first && <small className="field-error">{errors.first}</small>}
               </div>
               <div className="form-group">
-                <label htmlFor="last">Last name</label>
+                <label htmlFor="last">{t('apply.lastName')}</label>
                 <input
                   id="last"
                   name="last"
@@ -230,7 +229,7 @@ function Apply() {
 
             <div className="form-grid">
               <div className="form-group">
-                <label htmlFor="email">Email address</label>
+                <label htmlFor="email">{t('apply.email')}</label>
                 <input
                   id="email"
                   name="email"
@@ -243,7 +242,7 @@ function Apply() {
                 {errors.email && <small className="field-error">{errors.email}</small>}
               </div>
               <div className="form-group">
-                <label htmlFor="phone">Phone number</label>
+                <label htmlFor="phone">{t('apply.phone')}</label>
                 <PhoneInput
                   id="phone"
                   name="phone"
@@ -253,14 +252,14 @@ function Apply() {
                   placeholder="78XXXXXXX"
                   required
                 />
-                <small className="field-hint">Enter your 9-digit number. Country code +250 is added automatically.</small>
+                <small className="field-hint">{t('apply.phoneHint')}</small>
                 {errors.phone && <small className="field-error">{errors.phone}</small>}
               </div>
             </div>
 
             <div className="form-grid">
               <div className="form-group">
-                <label htmlFor="loanType">Loan type</label>
+                <label htmlFor="loanType">{t('apply.loanType')}</label>
                 <select
                   id="loanType"
                   name="loanType"
@@ -269,21 +268,21 @@ function Apply() {
                   onChange={handleChange}
                   required
                 >
-                  <option value="">Select a type</option>
-                  <option value="personal">Personal Loan</option>
-                  <option value="sme">SME & Business Loan</option>
-                  <option value="salary">Salary Loan</option>
-                  <option value="agricultural">Agricultural Loan</option>
-                  <option value="asset">Asset Financing</option>
-                  <option value="working-capital">Working Capital Loan</option>
-                  <option value="school-fees">School Fees Loan</option>
-                  <option value="emergency">Emergency Loan</option>
-                  <option value="Others">Other</option>
+                  <option value="">{t('apply.loanTypePlaceholder')}</option>
+                  <option value="personal">{t('apply.loanTypePersonal')}</option>
+                  <option value="sme">{t('apply.loanTypeSme')}</option>
+                  <option value="salary">{t('apply.loanTypeSalary')}</option>
+                  <option value="agricultural">{t('apply.loanTypeAgricultural')}</option>
+                  <option value="asset">{t('apply.loanTypeAsset')}</option>
+                  <option value="working-capital">{t('apply.loanTypeWorkingCapital')}</option>
+                  <option value="school-fees">{t('apply.loanTypeSchoolFees')}</option>
+                  <option value="emergency">{t('apply.loanTypeEmergency')}</option>
+                  <option value="Others">{t('apply.loanTypeOther')}</option>
                 </select>
                 {errors.loanType && <small className="field-error">{errors.loanType}</small>}
               </div>
               <div className="form-group">
-                <label htmlFor="amount">Loan amount (RWF)</label>
+                <label htmlFor="amount">{t('apply.amountLabel')}</label>
                 <input
                   id="amount"
                   name="amount"
@@ -293,7 +292,7 @@ function Apply() {
                   className={errorClass('amount')}
                   value={form.amount}
                   onChange={handleChange}
-                  placeholder="e.g. 500000"
+                  placeholder={t('apply.amountPlaceholder')}
                   required
                 />
                 {errors.amount && <small className="field-error">{errors.amount}</small>}
@@ -301,7 +300,7 @@ function Apply() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="date">Date of application</label>
+              <label htmlFor="date">{t('apply.dateLabel')}</label>
               <input
                 id="date"
                 name="date"
@@ -316,7 +315,7 @@ function Apply() {
 
             <div className="upload-area">
               <div className="upload-note">
-                Upload file based on your loan type
+                {t('apply.uploadNote')}
               </div>
               <label htmlFor="documents" className="upload-drop">
                 <input
@@ -329,8 +328,8 @@ function Apply() {
                 />
                 <span className="upload-icon">📎</span>
                 <span>
-                  Click to choose your PDF documents
-                  <small>National ID, income proof, business documents, etc.</small>
+                  {t('apply.uploadCta')}
+                  <small>{t('apply.uploadHint')}</small>
                 </span>
               </label>
               {files.length > 0 && (
@@ -343,7 +342,7 @@ function Apply() {
                         type="button"
                         onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}
                       >
-                        Remove
+                        {t('apply.remove')}
                       </button>
                     </li>
                   ))}
@@ -352,7 +351,7 @@ function Apply() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="monthly">Period of payment (months)</label>
+              <label htmlFor="monthly">{t('apply.periodLabel')}</label>
               <select
                 id="monthly"
                 name="monthly"
@@ -361,19 +360,21 @@ function Apply() {
                 onChange={handleChange}
                 required
               >
-                <option value="">Select months (max 24)</option>
+                <option value="">{t('apply.periodPlaceholder')}</option>
                 {Array.from({ length: 24 }, (_, i) => i + 1).map((m) => (
                   <option key={m} value={m}>
-                    {m} month{m > 1 ? 's' : ''}
+                    {m > 1
+                      ? t('apply.monthsMany', { count: m })
+                      : t('apply.monthsOne', { count: m })}
                   </option>
                 ))}
               </select>
-              <small className="field-hint">The repayment period depends on the loan product you selected.</small>
+              <small className="field-hint">{t('apply.periodHint')}</small>
               {errors.monthly && <small className="field-error">{errors.monthly}</small>}
             </div>
 
             <div className="form-group">
-              <label htmlFor="message">Anything else we should know?</label>
+              <label htmlFor="message">{t('apply.messageLabel')}</label>
               <textarea
                 id="message"
                 name="message"
@@ -384,7 +385,7 @@ function Apply() {
             </div>
 
             <button type="submit" className="btn btn-primary" disabled={sending}>
-              {sending ? 'Submitting…' : 'Submit Application'}
+              {sending ? t('apply.submitting') : t('apply.submit')}
             </button>
           </form>
         </div>

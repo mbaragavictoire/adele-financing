@@ -380,3 +380,68 @@ section {
     margin-bottom: 32px;
   }
 }
+
+/* ==========================================================================
+   Language selector — one control shared by the public header and the LMS.
+   A small segmented group of real buttons, so it is keyboard- and
+   screen-reader-friendly and easy to tap on a phone.
+   ========================================================================== */
+
+.lang-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--white);
+  flex: 0 0 auto;
+}
+
+.lang-selector .lang-globe {
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 4px 0 6px;
+  opacity: 0.75;
+}
+
+.lang-selector .lang-option {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background-color var(--t-fast) var(--ease),
+    color var(--t-fast) var(--ease);
+}
+
+.lang-selector .lang-option:hover {
+  color: var(--navy);
+  background: var(--blue-soft);
+}
+
+.lang-selector .lang-option.active {
+  background: var(--navy);
+  color: var(--white);
+}
+
+/* Admin header sits on a light bar as well, but uses a slightly denser look. */
+.lang-selector.lang-admin {
+  border-color: var(--border);
+}
+
+@media (max-width: 480px) {
+  .lang-selector .lang-option {
+    padding: 5px 7px;
+  }
+
+  .lang-selector .lang-globe {
+    display: none;
+  }
+}

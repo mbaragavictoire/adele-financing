@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { api, apiGet, formatCurrency } from '../../admin/api.js'
 import { StatusBadge, Empty, Loading } from '../../admin/ui.jsx'
 import { useAuth } from '../../admin/AuthContext.jsx'
+import { useI18n } from '../../i18n/index.jsx'
 
 const emptyProduct = {
   name: '',
@@ -16,6 +17,7 @@ const emptyProduct = {
 
 function LoanProducts() {
   const { user } = useAuth()
+  const { t } = useI18n()
   const isAdmin = user?.role === 'super_admin'
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
@@ -114,7 +116,7 @@ function LoanProducts() {
       <div className="admin-toolbar">
         <input
           className="admin-input admin-input-sm"
-          placeholder="Search products…"
+          placeholder={t('products.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -124,14 +126,14 @@ function LoanProducts() {
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         >
-          <option value="">All statuses</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="">{t('products.allStatuses')}</option>
+          <option value="active">{t('status.active')}</option>
+          <option value="inactive">{t('status.inactive')}</option>
         </select>
         <div className="spacer" />
         {isAdmin && (
           <button className="admin-btn admin-btn-primary" onClick={openNew}>
-            + New Loan Product
+            {t('products.new')}
           </button>
         )}
       </div>
@@ -142,20 +144,20 @@ function LoanProducts() {
         {loading ? (
           <Loading />
         ) : rows.length === 0 ? (
-          <Empty message="No loan products." />
+          <Empty message={t('products.empty')} />
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Min Amount</th>
-                  <th>Max Amount</th>
-                  <th>Interest Rate</th>
-                  <th>Max Period</th>
-                  <th>Frequency</th>
-                  <th>Status</th>
-                  {isAdmin && <th>Actions</th>}
+                  <th>{t('products.name')}</th>
+                  <th>{t('products.minAmount')}</th>
+                  <th>{t('products.maxAmount')}</th>
+                  <th>{t('products.interestRate')}</th>
+                  <th>{t('products.maxPeriod')}</th>
+                  <th>{t('products.frequency')}</th>
+                  <th>{t('ui.status')}</th>
+                  {isAdmin && <th>{t('ui.actions')}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -172,16 +174,16 @@ function LoanProducts() {
                     <td>{formatCurrency(p.min_amount)}</td>
                     <td>{formatCurrency(p.max_amount)}</td>
                     <td>{p.interest_rate}%</td>
-                    <td>{p.max_duration} mo</td>
+                    <td>{t('products.monthsAbbr', { n: p.max_duration })}</td>
                     <td>{p.repayment_frequency}</td>
                     <td><StatusBadge status={p.status} /></td>
                     {isAdmin && (
                       <td>
                         <button className="admin-btn-ghost" onClick={() => openEdit(p)}>
-                          Edit
+                          {t('products.edit')}
                         </button>
                         <button className="admin-btn-ghost" onClick={() => toggleStatus(p)}>
-                          {p.status === 'active' ? 'Deactivate' : 'Activate'}
+                          {p.status === 'active' ? t('products.deactivate') : t('products.activate')}
                         </button>
                       </td>
                     )}
@@ -203,7 +205,7 @@ function LoanProducts() {
         >
           <div className="admin-modal admin-modal-lg" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-head">
-              <h2>{form.id ? 'Edit Loan Product' : 'New Loan Product'}</h2>
+              <h2>{t(form.id ? 'products.editTitle' : 'products.newTitle')}</h2>
               <button
                 className="admin-modal-close"
                 onClick={() => {
@@ -218,7 +220,7 @@ function LoanProducts() {
               {error && <div className="admin-alert admin-alert-error">{error}</div>}
               <div className="admin-form-grid">
                 <div className="admin-form-group" style={{ gridColumn: '1 / -1' }}>
-                  <label>Product Name</label>
+                  <label>{t('products.name')}</label>
                   <input
                     className="admin-input"
                     value={form.name}
@@ -226,7 +228,7 @@ function LoanProducts() {
                   />
                 </div>
                 <div className="admin-form-group" style={{ gridColumn: '1 / -1' }}>
-                  <label>Description</label>
+                  <label>{t('products.description')}</label>
                   <textarea
                     className="admin-textarea"
                     rows="2"
@@ -235,7 +237,7 @@ function LoanProducts() {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Minimum Amount (RWF)</label>
+                  <label>{t('products.minAmountLabel')}</label>
                   <input
                     className="admin-input"
                     inputMode="numeric"
@@ -244,7 +246,7 @@ function LoanProducts() {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Maximum Amount (RWF)</label>
+                  <label>{t('products.maxAmountLabel')}</label>
                   <input
                     className="admin-input"
                     inputMode="numeric"
@@ -253,7 +255,7 @@ function LoanProducts() {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Interest Rate (%)</label>
+                  <label>{t('products.interestRateLabel')}</label>
                   <input
                     className="admin-input"
                     inputMode="numeric"
@@ -262,7 +264,7 @@ function LoanProducts() {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Maximum Period (months)</label>
+                  <label>{t('products.maxPeriodLabel')}</label>
                   <input
                     className="admin-input"
                     inputMode="numeric"
@@ -271,40 +273,40 @@ function LoanProducts() {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Repayment Frequency</label>
+                  <label>{t('products.frequencyLabel')}</label>
                   <select
                     className="admin-select"
                     value={form.repayment_frequency}
                     onChange={(e) => change('repayment_frequency', e.target.value)}
                   >
-                    <option>Monthly</option>
-                    <option>Weekly</option>
-                    <option>Bi-Weekly</option>
+                    <option value="Monthly">{t('products.freqMonthly')}</option>
+                    <option value="Weekly">{t('products.freqWeekly')}</option>
+                    <option value="Bi-Weekly">{t('products.freqBiWeekly')}</option>
                   </select>
                 </div>
                 <div className="admin-form-group">
-                  <label>Status</label>
+                  <label>{t('ui.status')}</label>
                   <select
                     className="admin-select"
                     value={form.status}
                     onChange={(e) => change('status', e.target.value)}
                   >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="active">{t('status.active')}</option>
+                    <option value="inactive">{t('status.inactive')}</option>
                   </select>
                 </div>
               </div>
             </div>
             <div className="admin-modal-foot">
               <button className="admin-btn" onClick={() => setEditing(false)}>
-                Cancel
+                {t('ui.cancel')}
               </button>
               <button
                 className="admin-btn admin-btn-primary"
                 onClick={save}
                 disabled={busy || !form.name}
               >
-                {busy ? 'Saving…' : 'Save Product'}
+                {busy ? t('products.saving') : t('products.save')}
               </button>
             </div>
           </div>

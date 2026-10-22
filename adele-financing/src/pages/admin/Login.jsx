@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../admin/AuthContext.jsx'
+import LanguageSelector from '../../components/LanguageSelector'
+import { useI18n } from '../../i18n/index.jsx'
 import logo from '../../assets/adele-logo-hd.jpg'
 import '../../admin/admin.css'
 
 function AdminLogin() {
   const { login, error } = useAuth()
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -30,42 +33,42 @@ function AdminLogin() {
 
   return (
     <div className="admin-login-page">
+      <div className="admin-login-lang">
+        <LanguageSelector variant="admin" />
+      </div>
       <div className="admin-login-card">
         <div className="admin-login-logo-wrap">
           <img src={logo} alt="ADELE Financing" />
         </div>
         <h1 className="admin-login-title" style={{ fontSize: 22 }}>
-          Staff Login
+          {t('login.title')}
         </h1>
-        <p className="admin-login-sub">
-          Access the ADELE Loan Management System
-        </p>
+        <p className="admin-login-sub">{t('login.subtitle')}</p>
 
         {forgot ? (
           <div>
             <div className="admin-alert admin-alert-info">
-              Enter the email associated with your staff account. Your
-              administrator will be notified to reset your password.
+              {t('login.forgotInfo')}
             </div>
             <form
               onSubmit={(e) => {
                 e.preventDefault()
                 setForgot(false)
-                setLocalError('Please contact your administrator to reset your password. (Demo)')
+                setLocalError(t('login.contactAdmin'))
               }}
             >
               <div className="admin-form-group">
-                <label htmlFor="reset-email">Email address</label>
+                <label htmlFor="reset-email">{t('login.email')}</label>
                 <input
                   id="reset-email"
                   type="email"
                   className="admin-input"
-                  placeholder="Enter your email"
+                  placeholder={t('login.enterEmail')}
                   required
                 />
               </div>
               <button type="submit" className="admin-login-btn">
-                Request Password Reset
+                {t('login.requestReset')}
               </button>
             </form>
             <div className="admin-login-link" style={{ marginTop: 12 }}>
@@ -76,7 +79,7 @@ function AdminLogin() {
                   setLocalError('')
                 }}
               >
-                ← Back to login
+                {t('login.backToLogin')}
               </button>
             </div>
           </div>
@@ -87,21 +90,21 @@ function AdminLogin() {
             )}
 
             <div className="admin-form-group">
-              <label htmlFor="login-email">Email or Username</label>
+              <label htmlFor="login-email">{t('login.emailOrUsername')}</label>
               <input
                 id="login-email"
                 type="email"
                 className="admin-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                placeholder={t('login.enterEmail')}
                 required
                 autoComplete="email"
               />
             </div>
 
             <div className="admin-form-group">
-              <label htmlFor="login-password">Password</label>
+              <label htmlFor="login-password">{t('login.password')}</label>
               <div className="password-wrap">
                 <input
                   id="login-password"
@@ -109,7 +112,7 @@ function AdminLogin() {
                   className="admin-input"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder={t('login.enterPassword')}
                   required
                   autoComplete="current-password"
                 />
@@ -117,27 +120,27 @@ function AdminLogin() {
                   type="button"
                   className="password-toggle"
                   onClick={() => setShow((s) => !s)}
-                  aria-label={show ? 'Hide password' : 'Show password'}
+                  aria-label={show ? t('login.hide') : t('login.show')}
                 >
-                  {show ? 'Hide' : 'Show'}
+                  {show ? t('login.hide') : t('login.show')}
                 </button>
               </div>
             </div>
 
             <div className="admin-login-link">
               <button type="button" onClick={() => setForgot(true)}>
-                Forgot password?
+                {t('login.forgot')}
               </button>
             </div>
 
             <button type="submit" className="admin-login-btn" disabled={loading}>
-              {loading ? 'Signing in…' : 'LOGIN'}
+              {loading ? t('login.signingIn') : t('login.login')}
             </button>
           </form>
         )}
 
         <Link to="/" className="admin-login-back">
-          ← Back to Company Website
+          {t('login.backToSite')}
         </Link>
       </div>
     </div>

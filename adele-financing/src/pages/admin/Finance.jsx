@@ -3,6 +3,7 @@ import { api, apiGet, formatCurrency, formatDate } from '../../admin/api.js'
 import { Empty, Loading } from '../../admin/ui.jsx'
 import { currentQuarter, quarterLabel } from '../../admin/quarters.js'
 import { QuarterPicker } from '../../admin/QuarterPicker.jsx'
+import { useI18n } from '../../i18n/index.jsx'
 
 const INCOME_CATEGORIES = [
   'Loan Interest',
@@ -38,14 +39,15 @@ const EXPENSE_DESCRIPTIONS = [
 const PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'Mobile Money', 'Cheque']
 
 const TABS = [
-  { key: 'income', label: 'Income' },
-  { key: 'expenses', label: 'Expenses' },
-  { key: 'cashflow', label: 'Cash Flow' },
-  { key: 'pnl', label: 'Profit & Loss' },
-  { key: 'balance', label: 'Balance Sheet' },
+  { key: 'income', label: 'finance.income' },
+  { key: 'expenses', label: 'finance.expenses' },
+  { key: 'cashflow', label: 'finance.tab.cashflow' },
+  { key: 'pnl', label: 'finance.tab.pnl' },
+  { key: 'balance', label: 'finance.tab.balance' },
 ]
 
 function LedgerTab({ kind }) {
+  const { t } = useI18n()
   const isIncome = kind === 'income'
   const categories = isIncome ? INCOME_CATEGORIES : EXPENSE_CATEGORIES
   const [rows, setRows] = useState([])
@@ -74,8 +76,8 @@ function LedgerTab({ kind }) {
   }, [kind, isIncome, search, category])
 
   useEffect(() => {
-    const t = setTimeout(load, 300)
-    return () => clearTimeout(t)
+    const timer = setTimeout(load, 300)
+    return () => clearTimeout(timer)
   }, [load])
 
   function openNew() {
@@ -130,7 +132,8 @@ function LedgerTab({ kind }) {
   }
 
   async function remove(row) {
-    if (!window.confirm(`Delete this ${kind.slice(0, -1)} record?`)) return
+    if (!window.confirm(t('finance.confirmDelete', { item: t(isIncome ? 'finance.income' : 'finance.expense') })))
+      return
     try {
       await api(`/finance/${kind === 'income' ? 'income' : 'expenses'}/${row.id}`, {
         method: 'DELETE',
@@ -146,7 +149,7 @@ function LedgerTab({ kind }) {
       <div className="admin-toolbar">
         <input
           className="admin-input admin-input-sm"
-          placeholder={`Search ${kind}…`}
+          placeholder={t(isIncome ? 'finance.searchIncome' : 'finance.searchExpenses')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -156,7 +159,7 @@ function LedgerTab({ kind }) {
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         >
-          <option value="">All categories</option>
+          <option value="">{t('finance.allCategories')}</option>
           {categories.map((c) => (
             <option key={c} value={c}>
               {c}
@@ -165,7 +168,7 @@ function LedgerTab({ kind }) {
         </select>
         <div className="spacer" />
         <button className="admin-btn admin-btn-primary" onClick={openNew}>
-          + Record {isIncome ? 'Income' : 'Expense'}
+          + {t('finance.recordTitle', { item: t(isIncome ? 'finance.income' : 'finance.expense') })}
         </button>
       </div>
 
@@ -175,19 +178,19 @@ function LedgerTab({ kind }) {
         {loading ? (
           <Loading />
         ) : rows.length === 0 ? (
-          <Empty message={`No ${kind} recorded yet.`} />
+          <Empty message={t(isIncome ? 'finance.emptyIncome' : 'finance.emptyExpenses')} />
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Description</th>
-                  <th>Category</th>
-                  <th>Amount</th>
-                  <th>Date</th>
-                  <th>Method</th>
-                  <th>Recorded By</th>
+                  <th>{t('finance.col.id')}</th>
+                  <th>{t('finance.description')}</th>
+                  <th>{t('finance.category')}</th>
+                  <th>{t('ui.amount')}</th>
+                  <th>{t('ui.date')}</th>
+                  <th>{t('finance.method')}</th>
+                  <th>{t('finance.recordedBy')}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -206,13 +209,13 @@ function LedgerTab({ kind }) {
                         className="admin-btn-ghost"
                         onClick={() => openEdit(row)}
                       >
-                        Edit
+                        {t('finance.edit')}
                       </button>
                       <button
                         className="admin-btn-ghost admin-btn-danger"
                         onClick={() => remove(row)}
                       >
-                        Delete
+                        {t('finance.delete')}
                       </button>
                     </td>
                   </tr>
@@ -227,7 +230,11 @@ function LedgerTab({ kind }) {
         <div className="admin-modal-overlay" onClick={() => setEditing(false)}>
           <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-head">
-              <h2>{current ? `Edit ${isIncome ? 'Income' : 'Expense'}` : `Record ${isIncome ? 'Income' : 'Expense'}`}</h2>
+              <h2>
+                {current
+                  ? t('finance.editTitle', { item: t(isIncome ? 'finance.income' : 'finance.expense') })
+                  : t('finance.recordTitle', { item: t(isIncome ? 'finance.income' : 'finance.expense') })}
+              </h2>
               <button className="admin-modal-close" onClick={() => setEditing(false)}>
                 ✕
               </button>
@@ -236,7 +243,7 @@ function LedgerTab({ kind }) {
               {error && <div className="admin-alert admin-alert-error">{error}</div>}
               <div className="admin-form-grid">
                 <div className="admin-form-group">
-                  <label>Description</label>
+                  <label>{t('finance.description')}</label>
                   {isIncome ? (
                     <input
                       className="admin-input"
@@ -267,13 +274,13 @@ function LedgerTab({ kind }) {
                               {d}
                             </option>
                           ))}
-                          <option value="_custom">Other…</option>
+                          <option value="_custom">{t('finance.other')}</option>
                         </select>
                         {!isPreset && (
                           <input
                             className="admin-input"
                             style={{ marginTop: 8 }}
-                            placeholder="Type a custom description…"
+                            placeholder={t('finance.customDescription')}
                             value={form.description}
                             onChange={(e) =>
                               setForm((f) => ({
@@ -289,7 +296,7 @@ function LedgerTab({ kind }) {
                   })()}
                 </div>
                 <div className="admin-form-group">
-                  <label>Amount (RWF)</label>
+                  <label>{t('finance.amountRwf')}</label>
                   <input
                     className="admin-input"
                     type="number"
@@ -300,7 +307,7 @@ function LedgerTab({ kind }) {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Category</label>
+                  <label>{t('finance.category')}</label>
                   <select
                     className="admin-select"
                     value={form.category}
@@ -314,7 +321,7 @@ function LedgerTab({ kind }) {
                   </select>
                 </div>
                 <div className="admin-form-group">
-                  <label>Date</label>
+                  <label>{t('ui.date')}</label>
                   <input
                     className="admin-input"
                     type="date"
@@ -324,7 +331,7 @@ function LedgerTab({ kind }) {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Payment Method</label>
+                  <label>{t('finance.paymentMethod')}</label>
                   <select
                     className="admin-select"
                     value={form.payment_method}
@@ -341,14 +348,14 @@ function LedgerTab({ kind }) {
             </div>
             <div className="admin-modal-foot">
               <button className="admin-btn" onClick={() => setEditing(false)}>
-                Cancel
+                {t('ui.cancel')}
               </button>
               <button
                 className="admin-btn admin-btn-primary"
                 onClick={save}
                 disabled={saving || !form.description || !form.amount || !form.date}
               >
-                {saving ? 'Saving…' : 'Save'}
+                {saving ? t('finance.saving') : t('ui.save')}
               </button>
             </div>
           </div>
@@ -359,6 +366,7 @@ function LedgerTab({ kind }) {
 }
 
 function CashFlowTab({ quarter }) {
+  const { t } = useI18n()
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
 
@@ -372,8 +380,8 @@ function CashFlowTab({ quarter }) {
   }, [quarter.q, quarter.year])
 
   useEffect(() => {
-    const t = setTimeout(load, 0)
-    return () => clearTimeout(t)
+    const timer = setTimeout(load, 0)
+    return () => clearTimeout(timer)
   }, [load])
 
   if (error) return <div className="admin-alert admin-alert-error">{error}</div>
@@ -382,10 +390,10 @@ function CashFlowTab({ quarter }) {
   const qLabel = data.quarter ? data.quarter.label : quarterLabel(quarter.q, quarter.year)
 
   const cards = [
-    { label: `Cash In · ${qLabel}`, value: data.cashIn, accent: 'accent-green', icon: '⬇️' },
-    { label: `Cash Out · ${qLabel}`, value: data.cashOut, accent: 'accent-red', icon: '⬆️' },
-    { label: `Net Cash Flow · ${qLabel}`, value: data.netCashFlow, accent: 'accent-teal', icon: '🌊' },
-    { label: 'Cash Balance (to date)', value: data.cashBalance, accent: 'accent-gold', icon: '🏦' },
+    { label: t('finance.cashInQ', { q: qLabel }), value: data.cashIn, accent: 'accent-green', icon: '⬇️' },
+    { label: t('finance.cashOutQ', { q: qLabel }), value: data.cashOut, accent: 'accent-red', icon: '⬆️' },
+    { label: t('finance.netCashFlowQ', { q: qLabel }), value: data.netCashFlow, accent: 'accent-teal', icon: '🌊' },
+    { label: t('finance.cashBalance'), value: data.cashBalance, accent: 'accent-gold', icon: '🏦' },
   ]
 
   return (
@@ -402,7 +410,7 @@ function CashFlowTab({ quarter }) {
       <div className="admin-panel">
         <div className="admin-panel-head">
           <h2>
-            Monthly Cash Flow
+            {t('finance.monthlyCashFlow')}
             {data.quarter && (
               <span className="quarter-range">
                 {data.quarter.label} · {data.quarter.dateRangeLabel}
@@ -412,16 +420,16 @@ function CashFlowTab({ quarter }) {
         </div>
         <div className="admin-panel-body" style={{ padding: 0 }}>
           {data.monthly.length === 0 ? (
-            <Empty message="No cash activity yet." />
+            <Empty message={t('finance.noCash')} />
           ) : (
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Month</th>
-                    <th>Cash In</th>
-                    <th>Cash Out</th>
-                    <th>Net</th>
+                    <th>{t('finance.month')}</th>
+                    <th>{t('finance.cashInCol')}</th>
+                    <th>{t('finance.cashOutCol')}</th>
+                    <th>{t('finance.net')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -444,6 +452,7 @@ function CashFlowTab({ quarter }) {
 }
 
 function PnlTab({ quarter }) {
+  const { t } = useI18n()
   const [pnl, setPnl] = useState(null)
   const [error, setError] = useState('')
 
@@ -457,26 +466,26 @@ function PnlTab({ quarter }) {
   }, [quarter.q, quarter.year])
 
   useEffect(() => {
-    const t = setTimeout(load, 0)
-    return () => clearTimeout(t)
+    const timer = setTimeout(load, 0)
+    return () => clearTimeout(timer)
   }, [load])
 
   if (error) return <div className="admin-alert admin-alert-error">{error}</div>
   if (!pnl) return <Loading />
 
   const rows = [
-    { label: 'Other Income', value: pnl.other_income, note: 'Application fees, service fees, penalties, etc.' },
-    { label: 'Loan Interest Received', value: pnl.interest_income, note: 'Interest portion of loan repayments.' },
-    { label: 'Total Income', value: pnl.total_income, total: true },
-    { label: 'Total Expenses', value: pnl.total_expenses, total: true },
-    { label: 'Net Profit / Loss', value: pnl.net_profit, net: true },
+    { label: t('finance.otherIncome'), value: pnl.other_income, note: t('finance.otherIncomeNote') },
+    { label: t('finance.interestReceived'), value: pnl.interest_income, note: t('finance.interestNote') },
+    { label: t('finance.totalIncome'), value: pnl.total_income, total: true },
+    { label: t('finance.totalExpenses'), value: pnl.total_expenses, total: true },
+    { label: t('finance.netProfitLoss'), value: pnl.net_profit, net: true },
   ]
 
   return (
     <div className="admin-panel">
       <div className="admin-panel-head">
         <h2>
-          Profit &amp; Loss Statement
+          {t('finance.pnlTitle')}
           {pnl.quarter && (
             <span className="quarter-range">
               {pnl.quarter.label} · {pnl.quarter.dateRangeLabel}
@@ -489,8 +498,8 @@ function PnlTab({ quarter }) {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Line Item</th>
-                <th>Amount (RWF)</th>
+                <th>{t('finance.lineItem')}</th>
+                <th>{t('finance.amountRwf')}</th>
               </tr>
             </thead>
             <tbody>
@@ -516,6 +525,7 @@ function PnlTab({ quarter }) {
 }
 
 function BalanceSheetTab() {
+  const { t } = useI18n()
   const [data, setData] = useState(null)
   const [form, setForm] = useState({})
   const [error, setError] = useState('')
@@ -532,8 +542,8 @@ function BalanceSheetTab() {
   }, [])
 
   useEffect(() => {
-    const t = setTimeout(load, 0)
-    return () => clearTimeout(t)
+    const timer = setTimeout(load, 0)
+    return () => clearTimeout(timer)
   }, [load])
 
   async function saveSettings() {
@@ -554,10 +564,10 @@ function BalanceSheetTab() {
 
   const { assets, liabilities, equity } = data
   const settingsLabels = [
-    { key: 'opening_cash', label: 'Opening Cash / Bank (RWF)' },
-    { key: 'equipment_value', label: 'Equipment Value (RWF)' },
-    { key: 'owner_capital', label: "Owner's Capital (RWF)" },
-    { key: 'liabilities_value', label: 'Company Payables (RWF)' },
+    { key: 'opening_cash', label: 'finance.openingCash' },
+    { key: 'equipment_value', label: 'finance.equipmentValue' },
+    { key: 'owner_capital', label: 'finance.ownerCapitalSetting' },
+    { key: 'liabilities_value', label: 'finance.liabilitiesValue' },
   ]
 
   return (
@@ -567,26 +577,26 @@ function BalanceSheetTab() {
       <div className="admin-grid-2">
         <div className="admin-panel">
           <div className="admin-panel-head">
-            <h2>Assets <span className="quarter-range">as of today</span></h2>
+            <h2>{t('finance.assets')} <span className="quarter-range">{t('finance.asOfToday')}</span></h2>
           </div>
           <div className="admin-panel-body" style={{ padding: 0 }}>
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <tbody>
                   <tr>
-                    <td>Cash / Bank</td>
+                    <td>{t('finance.cashBank')}</td>
                     <td style={{ textAlign: 'right' }}>{formatCurrency(assets.cash_bank)}</td>
                   </tr>
                   <tr>
-                    <td>Loans Receivable</td>
+                    <td>{t('finance.loansReceivable')}</td>
                     <td style={{ textAlign: 'right' }}>{formatCurrency(assets.loans_receivable)}</td>
                   </tr>
                   <tr>
-                    <td>Equipment</td>
+                    <td>{t('finance.equipment')}</td>
                     <td style={{ textAlign: 'right' }}>{formatCurrency(assets.equipment)}</td>
                   </tr>
                   <tr style={{ background: '#f8fafc', fontWeight: 600 }}>
-                    <td>Total Assets</td>
+                    <td>{t('finance.totalAssets')}</td>
                     <td style={{ textAlign: 'right' }}>{formatCurrency(assets.total)}</td>
                   </tr>
                 </tbody>
@@ -597,30 +607,30 @@ function BalanceSheetTab() {
 
         <div className="admin-panel">
           <div className="admin-panel-head">
-            <h2>Liabilities &amp; Equity <span className="quarter-range">as of today</span></h2>
+            <h2>{t('finance.liabilitiesEquity')} <span className="quarter-range">{t('finance.asOfToday')}</span></h2>
           </div>
           <div className="admin-panel-body" style={{ padding: 0 }}>
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <tbody>
                   <tr>
-                    <td>Company Payables</td>
+                    <td>{t('finance.payables')}</td>
                     <td style={{ textAlign: 'right' }}>{formatCurrency(liabilities.payables)}</td>
                   </tr>
                   <tr>
-                    <td>Unearned Interest</td>
+                    <td>{t('finance.unearnedInterest')}</td>
                     <td style={{ textAlign: 'right' }}>{formatCurrency(liabilities.unearned_interest)}</td>
                   </tr>
                   <tr>
-                    <td>Owner's Capital</td>
+                    <td>{t('finance.ownerCapital')}</td>
                     <td style={{ textAlign: 'right' }}>{formatCurrency(equity.owner_capital)}</td>
                   </tr>
                   <tr>
-                    <td>Retained Earnings</td>
+                    <td>{t('finance.retainedEarnings')}</td>
                     <td style={{ textAlign: 'right' }}>{formatCurrency(equity.retained_earnings)}</td>
                   </tr>
                   <tr style={{ background: '#f8fafc', fontWeight: 600 }}>
-                    <td>Total Liabilities + Equity</td>
+                    <td>{t('finance.totalLiabilitiesEquity')}</td>
                     <td style={{ textAlign: 'right' }}>
                       {formatCurrency(data.total_liabilities_equity)}
                     </td>
@@ -639,21 +649,21 @@ function BalanceSheetTab() {
             : 'admin-alert-warning'
         }`}
       >
-        <strong>Balance check:</strong>{' '}
+        <strong>{t('finance.balanceCheck')}</strong>{' '}
         {Math.abs(data.difference) < 0.005
-          ? 'Assets = Liabilities + Equity ✓'
-          : `Assets − (Liabilities + Equity) = ${formatCurrency(data.difference)}. Adjust opening balances below so the equation balances.`}
+          ? t('finance.balanceOk')
+          : t('finance.balanceOff', { amount: formatCurrency(data.difference) })}
       </div>
 
       <div className="admin-panel">
         <div className="admin-panel-head">
-          <h2>Balance Sheet Settings</h2>
+          <h2>{t('finance.balanceSettings')}</h2>
         </div>
         <div className="admin-panel-body">
           <div className="admin-form-grid">
             {settingsLabels.map((f) => (
               <div className="admin-form-group" key={f.key}>
-                <label>{f.label}</label>
+                <label>{t(f.label)}</label>
                 <input
                   className="admin-input"
                   type="number"
@@ -671,7 +681,7 @@ function BalanceSheetTab() {
             onClick={saveSettings}
             disabled={saving}
           >
-            {saving ? 'Saving…' : 'Save Opening Balances'}
+            {saving ? t('finance.saving') : t('finance.saveBalances')}
           </button>
         </div>
       </div>
@@ -680,6 +690,7 @@ function BalanceSheetTab() {
 }
 
 function Finance() {
+  const { t } = useI18n()
   const defaultQuarter = currentQuarter()
   const [tab, setTab] = useState('income')
   const [quarterQ, setQuarterQ] = useState(defaultQuarter.q)
@@ -689,13 +700,13 @@ function Finance() {
   return (
     <>
       <div className="admin-tabs">
-        {TABS.map((t) => (
+        {TABS.map((tabItem) => (
           <button
-            key={t.key}
-            className={`admin-tab ${tab === t.key ? 'active' : ''}`}
-            onClick={() => setTab(t.key)}
+            key={tabItem.key}
+            className={`admin-tab ${tab === tabItem.key ? 'active' : ''}`}
+            onClick={() => setTab(tabItem.key)}
           >
-            {t.label}
+            {t(tabItem.label)}
           </button>
         ))}
       </div>
@@ -703,7 +714,7 @@ function Finance() {
       {isQuarterTab && (
         <div className="quarter-bar" style={{ marginTop: 18 }}>
           <div>
-            <strong>Reporting Quarter</strong>
+            <strong>{t('finance.quarter')}</strong>
             <span className="quarter-range">{quarterLabel(quarterQ, quarterYear)}</span>
           </div>
           <QuarterPicker

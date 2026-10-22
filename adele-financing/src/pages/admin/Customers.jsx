@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { api, apiGet, formatCurrency, formatDate } from '../../admin/api.js'
 import { StatusBadge, Empty, Loading, PhoneInput } from '../../admin/ui.jsx'
 import { isValidRwPhone } from '../../admin/phone.js'
+import { useI18n } from '../../i18n/index.jsx'
 
 const emptyCustomer = {
   full_name: '',
@@ -101,6 +102,7 @@ function mapSheetRows(json) {
 }
 
 function Customers() {
+  const { t } = useI18n()
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -206,7 +208,7 @@ function Customers() {
   }
 
   async function removeCustomer(c) {
-    if (!window.confirm(`Delete customer ${c.full_name}? This cannot be undone.`)) return
+    if (!window.confirm(t('customers.deleteConfirm', { name: c.full_name }))) return
     try {
       await api(`/customers/${c.id}`, { method: 'DELETE' })
       if (viewing?.id === c.id) {
@@ -261,7 +263,7 @@ function Customers() {
       <div className="admin-toolbar">
         <input
           className="admin-input admin-input-sm"
-          placeholder="Search name, phone, gender…"
+          placeholder={t('customers.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -271,9 +273,9 @@ function Customers() {
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         >
-          <option value="">All statuses</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="">{t('customers.allStatuses')}</option>
+          <option value="active">{t('status.active')}</option>
+          <option value="inactive">{t('status.inactive')}</option>
         </select>
         <div className="spacer" />
         <button
@@ -285,10 +287,10 @@ function Customers() {
             setImportOpen(true)
           }}
         >
-          ⬆ Import Excel
+          ⬆ {t('customers.importExcel')}
         </button>
         <button className="admin-btn admin-btn-primary" onClick={openNew}>
-          + Add Customer
+          + {t('customers.addCustomer')}
         </button>
       </div>
 
@@ -298,20 +300,20 @@ function Customers() {
         {loading ? (
           <Loading />
         ) : rows.length === 0 ? (
-          <Empty message="No customers found." />
+          <Empty message={t('customers.noCustomers')} />
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
 <tr>
-                    <th>Customer ID</th>
-                    <th>Full Name</th>
-                    <th>Phone</th>
-                    <th>Gender</th>
-                    <th>Amount</th>
-                    <th>Period</th>
-                    <th>Status</th>
-                    <th>Date</th>
+                    <th>{t('customers.customerId')}</th>
+                    <th>{t('customers.fullName')}</th>
+                    <th>{t('customers.phone')}</th>
+                    <th>{t('customers.gender')}</th>
+                    <th>{t('ui.amount')}</th>
+                    <th>{t('customers.period')}</th>
+                    <th>{t('ui.status')}</th>
+                    <th>{t('ui.date')}</th>
                     <th></th>
                   </tr>
               </thead>
@@ -331,20 +333,20 @@ function Customers() {
                         className="admin-btn-ghost"
                         onClick={() => viewCustomer(c)}
                       >
-                        View / History
+                        {t('customers.viewHistory')}
                       </button>
                       <button
                         className="admin-btn-ghost"
                         onClick={() => openEdit(c)}
                       >
-                        Edit
+                        {t('customers.edit')}
                       </button>
                       <button
                         className="admin-btn-ghost admin-btn-danger"
                         onClick={() => removeCustomer(c)}
-                        title="Delete customer"
+                        title={t('customers.deleteCustomerTitle')}
                       >
-                        Delete
+                        {t('customers.delete')}
                       </button>
                     </td>
                   </tr>
@@ -370,79 +372,79 @@ function Customers() {
             <div className="admin-modal-body">
               <div className="admin-detail">
                 <div>
-                  <div className="label">Customer ID</div>
+                  <div className="label">{t('customers.customerId')}</div>
                   <div className="value">{viewing.customer_id}</div>
                 </div>
                 <div>
-                  <div className="label">Phone</div>
+                  <div className="label">{t('customers.phone')}</div>
                   <div className="value">{viewing.phone_number}</div>
                 </div>
                 <div>
-                  <div className="label">Email</div>
+                  <div className="label">{t('customers.email')}</div>
                    <div className="value">{viewing.email || '-'}</div>
                  </div>
                  <div>
-                   <div className="label">Gender</div>
+                   <div className="label">{t('customers.gender')}</div>
                   <div className="value">{viewing.gender || '-'}</div>
                 </div>
                 <div>
-                  <div className="label">Amount</div>
+                  <div className="label">{t('customers.amount')}</div>
                   <div className="value">{formatCurrency(viewing.amount ?? 0)}</div>
                 </div>
                 <div>
-                  <div className="label">Period</div>
-                  <div className="value">{viewing.duration ? `${viewing.duration} month(s)` : '-'}</div>
+                  <div className="label">{t('customers.period')}</div>
+                  <div className="value">{viewing.duration ? t('customers.monthsLabel', { n: viewing.duration }) : '-'}</div>
                 </div>
                 <div>
-                  <div className="label">Status</div>
+                  <div className="label">{t('customers.status')}</div>
                   <div className="value"><StatusBadge status={viewing.status} /></div>
                 </div>
                 <div>
-                  <div className="label">Date</div>
+                  <div className="label">{t('customers.date')}</div>
                   <div className="value">{formatDate(viewing.registration_date)}</div>
                 </div>
               </div>
 
               <div className="admin-cards" style={{ marginTop: 20, marginBottom: 0 }}>
                 <div className="admin-card">
-                  <div className="admin-card-label">Current loan(s)</div>
+                  <div className="admin-card-label">{t('customers.currentLoans')}</div>
                   <div className="admin-card-value">{viewing.current_loans?.length || 0}</div>
                 </div>
                 <div className="admin-card">
-                  <div className="admin-card-label">Previous / closed loan(s)</div>
+                  <div className="admin-card-label">{t('customers.previousLoans')}</div>
                   <div className="admin-card-value">{viewing.previous_loans?.length || 0}</div>
                 </div>
                 <div className="admin-card">
-                  <div className="admin-card-label">Completed loan(s)</div>
+                  <div className="admin-card-label">{t('customers.completedLoans')}</div>
                   <div className="admin-card-value">{viewing.completed_loans?.length || 0}</div>
                 </div>
                 <div className="admin-card">
-                  <div className="admin-card-label">Outstanding balance</div>
+                  <div className="admin-card-label">{t('customers.outstandingBalance')}</div>
                   <div className="admin-card-value">
                     {formatCurrency(viewing.outstanding_balance ?? 0)}
                   </div>
                 </div>
               </div>
 
-              <h3 style={{ margin: '24px 0 12px' }}>Loan History</h3>
+              <h3 style={{ margin: '24px 0 12px' }}>{t('customers.loanHistory')}</h3>
               {!viewing.loans?.length ? (
-                <Empty message="No loans yet." />
+                <Empty message={t('customers.noLoansYet')} />
               ) : (
                 <div className="admin-table-wrap">
                   <table className="admin-table">
                     <thead>
                       <tr>
-                        <th>Loan ID</th>
-                        <th>Product</th>
-                        <th>Amount</th>
-                        <th>Interest Rate</th>
-                        <th>Period</th>
-                        <th>Application Date</th>
-                        <th>Approval Date</th>
-                        <th>Disbursement Date</th>
-                        <th>Amount Paid</th>
-                        <th>Outstanding</th>
-                        <th>Status</th>
+                        <th>{t('customers.loanId')}</th>
+                        <th>{t('customers.product')}</th>
+                        <th>{t('customers.amount')}</th>
+                        <th>{t('customers.interestRate')}</th>
+                        <th>{t('customers.period')}</th>
+                        <th>{t('customers.applicationDate')}</th>
+                        <th>{t('customers.approvalDate')}</th>
+                        <th>{t('customers.disbursementDate')}</th>
+                        <th>{t('customers.amountPaid')}</th>
+                        <th>{t('customers.outstanding')}</th>
+                        <th>{t('customers.status')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -452,7 +454,7 @@ function Customers() {
                           <td>{l.product_name || '-'}</td>
                           <td>{formatCurrency(l.principal)}</td>
                           <td>{l.interest_rate != null ? `${l.interest_rate}%` : '-'}</td>
-                          <td>{l.duration ? `${l.duration} mo` : '-'}</td>
+                          <td>{l.duration ? t('customers.months', { n: l.duration }) : '-'}</td>
                           <td>{l.application_date ? formatDate(l.application_date) : '-'}</td>
                           <td>{l.approved_at ? formatDate(l.approved_at) : '-'}</td>
                           <td>{l.disbursement_date ? formatDate(l.disbursement_date) : '-'}</td>
@@ -466,23 +468,23 @@ function Customers() {
                 </div>
               )}
 
-              <h3 style={{ margin: '24px 0 12px' }}>Loan Application History</h3>
+              <h3 style={{ margin: '24px 0 12px' }}>{t('customers.loanApplicationHistory')}</h3>
               {!viewing.applications?.length ? (
-                <Empty message="No linked applications yet." />
+                <Empty message={t('customers.noLinkedApplications')} />
               ) : (
                 <div className="admin-table-wrap">
                   <table className="admin-table">
                     <thead>
                       <tr>
-                        <th>Application</th>
-                        <th>Product</th>
-                        <th>Requested</th>
-                        <th>Approved</th>
-                        <th>Period</th>
-                        <th>Purpose / note</th>
-                        <th>Status</th>
-                        <th>Applied</th>
-                        <th>Decision</th>
+                        <th>{t('customers.application')}</th>
+                        <th>{t('customers.product')}</th>
+                        <th>{t('customers.requested')}</th>
+                        <th>{t('customers.approved')}</th>
+                        <th>{t('customers.period')}</th>
+                        <th>{t('customers.purposeNote')}</th>
+                        <th>{t('customers.status')}</th>
+                        <th>{t('customers.applied')}</th>
+                        <th>{t('customers.decision')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -498,7 +500,9 @@ function Customers() {
                           </td>
                           <td>
                             {application.approved_duration || application.requested_duration
-                              ? `${application.approved_duration || application.requested_duration} mo`
+                              ? t('customers.months', {
+                                  n: application.approved_duration || application.requested_duration,
+                                })
                               : '-'}
                           </td>
                           <td>
@@ -518,20 +522,20 @@ function Customers() {
                 </div>
               )}
 
-              <h3 style={{ margin: '24px 0 12px' }}>Repayment History</h3>
+              <h3 style={{ margin: '24px 0 12px' }}>{t('customers.repaymentHistory')}</h3>
               {!viewing.repayments?.length ? (
-                <Empty message="No repayments recorded yet." />
+                <Empty message={t('customers.noRepayments')} />
               ) : (
                 <div className="admin-table-wrap">
                   <table className="admin-table">
                     <thead>
                       <tr>
-                        <th>Repayment</th>
-                        <th>Loan</th>
-                        <th>Date</th>
-                        <th>Amount</th>
-                        <th>Method</th>
-                        <th>Reference</th>
+                        <th>{t('customers.repayment')}</th>
+                        <th>{t('customers.loan')}</th>
+                        <th>{t('customers.date')}</th>
+                        <th>{t('customers.amount')}</th>
+                        <th>{t('customers.method')}</th>
+                        <th>{t('customers.reference')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -578,7 +582,7 @@ function Customers() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="admin-modal-head">
-              <h2>{viewing?.id ? 'Edit Customer' : 'Add Customer'}</h2>
+              <h2>{viewing?.id ? t('customers.editCustomer') : t('customers.addCustomerTitle')}</h2>
               <button
                 className="admin-modal-close"
                 onClick={() => {
@@ -593,7 +597,7 @@ function Customers() {
               {error && <div className="admin-alert admin-alert-error">{error}</div>}
               <div className="admin-form-grid">
                 <div className="admin-form-group">
-                  <label>Full Name</label>
+                  <label>{t('customers.fullName')}</label>
                   <input
                     className="admin-input"
                     value={form.full_name}
@@ -602,7 +606,7 @@ function Customers() {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Phone Number</label>
+                  <label>{t('customers.phone')}</label>
                   <PhoneInput
                     className="admin-input"
                     value={form.phone_number}
@@ -612,7 +616,7 @@ function Customers() {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Email address</label>
+                  <label>{t('customers.email')}</label>
                    <input
                      className="admin-input"
                      type="email"
@@ -621,21 +625,21 @@ function Customers() {
                    />
                  </div>
                  <div className="admin-form-group">
-                   <label>Gender</label>
+                   <label>{t('customers.gender')}</label>
                   <select
                     className="admin-select"
                     value={form.gender}
                     onChange={(e) => change('gender', e.target.value)}
                     required
                   >
-                    <option value="">Select gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
+                    <option value="">{t('customers.selectGender')}</option>
+                    <option value="Male">{t('customers.male')}</option>
+                    <option value="Female">{t('customers.female')}</option>
+                    <option value="Other">{t('customers.other')}</option>
                   </select>
                 </div>
                 <div className="admin-form-group">
-                  <label>Date</label>
+                  <label>{t('customers.date')}</label>
                   <input
                     className="admin-input"
                     type="date"
@@ -645,7 +649,7 @@ function Customers() {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Amount (RWF)</label>
+                  <label>{t('customers.amountRwf')}</label>
                   <input
                     className="admin-input"
                     type="number"
@@ -657,7 +661,7 @@ function Customers() {
                   />
                 </div>
                 <div className="admin-form-group">
-                  <label>Period (months)</label>
+                  <label>{t('customers.periodMonths')}</label>
                   <input
                     className="admin-input"
                     type="number"
@@ -668,17 +672,17 @@ function Customers() {
                     onChange={(e) => change('duration', e.target.value)}
                     required
                   />
-                  <small className="field-hint">Maximum 6 months.</small>
+                  <small className="field-hint">{t('customers.max6Months')}</small>
                 </div>
                 <div className="admin-form-group">
-                  <label>Status</label>
+                  <label>{t('ui.status')}</label>
                   <select
                     className="admin-select"
                     value={form.status}
                     onChange={(e) => change('status', e.target.value)}
                   >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="active">{t('status.active')}</option>
+                    <option value="inactive">{t('status.inactive')}</option>
                   </select>
                 </div>
               </div>
@@ -703,7 +707,7 @@ function Customers() {
         <div className="admin-modal-overlay" onClick={() => setImportOpen(false)}>
           <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
             <div className="admin-modal-head">
-              <h2>Import Customers from Excel</h2>
+              <h2>{t('customers.importCustomersTitle')}</h2>
               <button className="admin-modal-close" onClick={() => setImportOpen(false)}>
                 ✕
               </button>
@@ -720,7 +724,7 @@ function Customers() {
                 date is used. Extra columns in the file are ignored.
               </p>
               <label className="admin-btn" style={{ cursor: 'pointer' }}>
-                {importFileName || 'Choose file…'}
+                {importFileName || t('customers.chooseFile')}
                 <input
                   type="file"
                   accept=".xlsx,.xls,.csv"
@@ -749,27 +753,27 @@ function Customers() {
                 >
                   <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 8 }}>
                     <div>
-                      <strong>Total records:</strong> {importResult.imported.length + importResult.errors.length}
+                      <strong>{t('customers.totalRecords')}</strong> {importResult.imported.length + importResult.errors.length}
                     </div>
                     <div>
-                      <strong>Successfully imported:</strong> {importResult.imported.length}
+                      <strong>{t('customers.successfullyImported')}</strong> {importResult.imported.length}
                     </div>
                     <div>
-                      <strong>Failed records:</strong> {importResult.errors.length}
+                      <strong>{t('customers.failedRecords')}</strong> {importResult.errors.length}
                     </div>
                   </div>
                   {importResult.errors.length > 0 && (
                     <div>
-                      <div style={{ fontWeight: 600, marginBottom: 4 }}>Reason for failed records:</div>
+                      <div style={{ fontWeight: 600, marginBottom: 4 }}>{t('customers.failedReason')}</div>
                       <ul style={{ margin: 0, paddingLeft: 18 }}>
                         {importResult.errors.slice(0, 50).map((er) => (
                           <li key={er.row} style={{ fontSize: 13 }}>
-                            Row {er.row}: {er.error}
+                            {t('customers.rowLabel', { n: er.row })} {er.error}
                           </li>
                         ))}
                       </ul>
                       {importResult.errors.length > 50 && (
-                        <small>…and {importResult.errors.length - 50} more.</small>
+                        <small>{t('customers.andMore', { n: importResult.errors.length - 50 })}</small>
                       )}
                     </div>
                   )}
@@ -779,19 +783,19 @@ function Customers() {
               {importedRows.length > 0 && (
                 <>
                   <div className="admin-panel-head" style={{ marginTop: 14 }}>
-                    <h2>Preview ({importedRows.length} rows)</h2>
+                    <h2>{t('customers.preview', { n: importedRows.length })}</h2>
                   </div>
                   <div style={{ maxHeight: 260, overflow: 'auto' }}>
                     <table className="admin-table">
                       <thead>
                         <tr>
-<th>Full Name</th>
-                          <th>Phone</th>
-                          <th>Gender</th>
-                          <th>Email</th>
-                          <th>Amount</th>
-                          <th>Period</th>
-                          <th>Date Registered</th>
+<th>{t('customers.fullName')}</th>
+                          <th>{t('customers.phone')}</th>
+                          <th>{t('customers.gender')}</th>
+                          <th>{t('customers.email')}</th>
+                          <th>{t('ui.amount')}</th>
+                          <th>{t('customers.period')}</th>
+                          <th>{t('customers.dateRegistered')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -802,7 +806,7 @@ function Customers() {
                             <td>{r.gender || '-'}</td>
                             <td>{r.email || '-'}</td>
                             <td>{formatCurrency(r.amount)}</td>
-                            <td>{r.duration} mo</td>
+                            <td>{r.duration ? t('customers.months', { n: r.duration }) : '-'}</td>
                             <td>{r.registration_date}</td>
                           </tr>
                         ))}
@@ -810,7 +814,7 @@ function Customers() {
                     </table>
                   </div>
                   {importedRows.length > 100 && (
-                    <small>Showing first 100 of {importedRows.length} rows.</small>
+                    <small>{t('customers.showingFirst', { n: importedRows.length })}</small>
                   )}
                 </>
               )}

@@ -1,15 +1,17 @@
 import { useEffect, useState, useCallback } from 'react'
 import { api, apiGet } from '../../admin/api.js'
 import { Loading, PhoneInput } from '../../admin/ui.jsx'
+import { useI18n } from '../../i18n/index.jsx'
 
 const SETTING_FIELDS = [
-  { key: 'company_name', label: 'Company Name' },
-  { key: 'company_email', label: 'Company Email' },
-  { key: 'company_phone', label: 'Company Phone' },
-  { key: 'company_address', label: 'Company Address' },
+  { key: 'company_name', labelKey: 'settings.companyName' },
+  { key: 'company_email', labelKey: 'settings.companyEmail' },
+  { key: 'company_phone', labelKey: 'settings.companyPhone' },
+  { key: 'company_address', labelKey: 'settings.companyAddress' },
 ]
 
 function Settings() {
+  const { t } = useI18n()
   const [values, setValues] = useState({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -62,18 +64,18 @@ function Settings() {
       {error && <div className="admin-alert admin-alert-error">{error}</div>}
       {success && (
         <div className="admin-alert admin-alert-success">
-          Settings saved successfully.
+          {t('settings.saved')}
         </div>
       )}
 
       <div className="admin-panel">
         <div className="admin-panel-head">
-          <h2>Company Settings</h2>
+          <h2>{t('settings.title')}</h2>
         </div>
         <div className="admin-panel-body">
           {SETTING_FIELDS.map((f) => (
             <div className="admin-form-group" key={f.key}>
-              <label>{f.label}</label>
+              <label>{t(f.labelKey)}</label>
               {f.key === 'company_phone' ? (
                 <PhoneInput
                   className="admin-input"
@@ -97,7 +99,7 @@ function Settings() {
             onClick={save}
             disabled={saving}
           >
-            {saving ? 'Saving…' : 'Save Settings'}
+            {saving ? t('settings.saving') : t('settings.save')}
           </button>
         </div>
       </div>

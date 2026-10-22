@@ -739,11 +739,19 @@
 
 /* ---- Login page ---- */
 .admin-login-page {
+  position: relative;
   min-height: 100vh;
   display: grid;
   place-items: center;
   padding: 24px;
   background: linear-gradient(135deg, var(--navy) 0%, var(--navy-deep) 100%);
+}
+
+/* Language switch sits above the card on the sign-in screen. */
+.admin-login-lang {
+  position: absolute;
+  top: 20px;
+  right: 20px;
 }
 
 .admin-login-card {

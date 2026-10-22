@@ -1,22 +1,27 @@
 import moneyBg from '../assets/money-bg.jpg'
 import ambientBg from '../assets/adele-ambient-1.jpg'
+import { useI18n } from '../i18n/index.jsx'
 import '../pages.css'
 
+// Items hold message keys resolved with `t()` at render time; the translated
+// strings live in src/i18n/messages/public-services.js.
 const services = [
-  'School Fees Loans',
-  'Emergency Loans',
-  'Trade Finance',
-  'Invoice Financing',
-  'Loan Top-Up & Restructuring',
-  'Financial Advisory',
-  'Tax Advisory',
-  'Credit Assessment',
-  'Business Training',
-  'Loan Recovery Services',
-  'Digital Loan Application & Repayment',
+  'services.items.schoolFees',
+  'services.items.emergency',
+  'services.items.tradeFinance',
+  'services.items.invoiceFinancing',
+  'services.items.topUp',
+  'services.items.financialAdvisory',
+  'services.items.taxAdvisory',
+  'services.items.creditAssessment',
+  'services.items.businessTraining',
+  'services.items.recovery',
+  'services.items.digital',
 ]
 
 function Services() {
+  const { t } = useI18n()
+
   return (
     <div
       className="home-bg"
@@ -38,25 +43,22 @@ function Services() {
         }}
       >
         <div className="container">
-          <h1>Other Services</h1>
-          <p>
-            From personal needs to business growth, ADELE provides accessible
-            and affordable financing tailored to you.
-          </p>
+          <h1>{t('services.title')}</h1>
+          <p>{t('services.subtitle')}</p>
         </div>
       </section>
 
       <section>
         <div className="container">
           <div className="section-head">
-            <div className="section-label">What we offer</div>
-            <h2>Financing solutions for every need</h2>
+            <div className="section-label">{t('services.label')}</div>
+            <h2>{t('services.heading')}</h2>
           </div>
           <div className="features">
             {services.map((s) => (
               <div className="feature-card" key={s}>
                 <div className="feature-icon">✓</div>
-                <h3>{s}</h3>
+                <h3>{t(s)}</h3>
               </div>
             ))}
           </div>

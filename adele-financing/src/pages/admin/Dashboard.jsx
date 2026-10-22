@@ -4,9 +4,11 @@ import { StatusBadge, Empty, Loading } from '../../admin/ui.jsx'
 import { useAuth } from '../../admin/AuthContext.jsx'
 import { currentQuarter } from '../../admin/quarters.js'
 import { QuarterPicker } from '../../admin/QuarterPicker.jsx'
+import { useI18n } from '../../i18n/index.jsx'
 
 function Dashboard() {
   const { user } = useAuth()
+  const { t } = useI18n()
   const canFinance = ['super_admin', 'manager', 'finance_officer'].includes(user?.role)
   const defaultQuarter = currentQuarter()
   const [quarterQ, setQuarterQ] = useState(defaultQuarter.q)
@@ -45,31 +47,31 @@ function Dashboard() {
   // Snapshot figures — current stock, not period activity. Always "to date".
   const snapshotCards = [
     {
-      label: 'Total Customers',
+      label: t('dashboard.totalCustomers'),
       value: summary.total_customers,
       icon: '👥',
       accent: 'accent-teal',
     },
     {
-      label: 'Active Customers',
+      label: t('dashboard.activeCustomers'),
       value: summary.active_customers ?? 0,
       icon: '✅',
       accent: 'accent-green',
     },
     {
-      label: 'Inactive Customers',
+      label: t('dashboard.inactiveCustomers'),
       value: summary.inactive_customers ?? 0,
       icon: '📭',
       accent: 'accent-navy',
     },
     {
-      label: 'Active Loans',
+      label: t('dashboard.activeLoans'),
       value: summary.active_loans,
       icon: '💰',
       accent: 'accent-gold',
     },
     {
-      label: 'Inactive Loans',
+      label: t('dashboard.inactiveLoans'),
       value: summary.inactive_loans,
       icon: '📭',
       accent: 'accent-navy',
@@ -81,55 +83,55 @@ function Dashboard() {
   // end* (opening balances + earlier transactions included).
   const quarterCards = [
     {
-      label: `Applications · ${qLabel}`,
+      label: t('dashboard.cardApplications', { quarter: qLabel }),
       value: summary.applications_total_quarter ?? 0,
       icon: '📝',
       accent: 'accent-teal',
     },
     {
-      label: `Approved · ${qLabel}`,
+      label: t('dashboard.cardApproved', { quarter: qLabel }),
       value: summary.applications_approved_quarter ?? 0,
       icon: '✅',
       accent: 'accent-green',
     },
     {
-      label: `Rejected · ${qLabel}`,
+      label: t('dashboard.cardRejected', { quarter: qLabel }),
       value: summary.applications_rejected_quarter ?? 0,
       icon: '🚫',
       accent: 'accent-red',
     },
     {
-      label: `Loans Disbursed · ${qLabel}`,
+      label: t('dashboard.cardLoansDisbursed', { quarter: qLabel }),
       value: summary.loans_disbursed_quarter,
       icon: '🏦',
       accent: 'accent-gold',
     },
     {
-      label: `Disbursed Amount · ${qLabel}`,
+      label: t('dashboard.cardDisbursedAmount', { quarter: qLabel }),
       value: formatCurrency(summary.total_disbursed_quarter),
       icon: '💵',
       accent: 'accent-green',
     },
     {
-      label: `Repayments Received · ${qLabel}`,
+      label: t('dashboard.cardRepaymentsReceived', { quarter: qLabel }),
       value: formatCurrency(summary.repayments_received_quarter ?? 0),
       icon: '↩️',
       accent: 'accent-teal',
     },
     {
-      label: `Interest Received · ${qLabel}`,
+      label: t('dashboard.cardInterestReceived', { quarter: qLabel }),
       value: formatCurrency(summary.interest_received_quarter),
       icon: '📈',
       accent: 'accent-green',
     },
     {
-      label: `Capital Repaid · ${qLabel}`,
+      label: t('dashboard.cardCapitalRepaid', { quarter: qLabel }),
       value: formatCurrency(summary.capital_repaid_quarter),
       icon: '💳',
       accent: 'accent-navy',
     },
     {
-      label: `Outstanding · as of ${endLabel}`,
+      label: t('dashboard.cardOutstanding', { date: endLabel }),
       value: formatCurrency(summary.outstanding_balance_end ?? 0),
       icon: '💳',
       accent: 'accent-red',
@@ -144,25 +146,25 @@ function Dashboard() {
   const financeCards = finance
     ? [
         {
-          label: `Income · ${qLabel}`,
+          label: t('dashboard.cardIncome', { quarter: qLabel }),
           value: formatCurrency(finance.total_income_quarter ?? 0),
           icon: '💵',
           accent: 'accent-green',
         },
         {
-          label: `Expenses · ${qLabel}`,
+          label: t('dashboard.cardExpenses', { quarter: qLabel }),
           value: formatCurrency(finance.expenses_quarter ?? 0),
           icon: '📤',
           accent: 'accent-red',
         },
         {
-          label: `Net Profit · ${qLabel}`,
+          label: t('dashboard.cardNetProfit', { quarter: qLabel }),
           value: formatCurrency(finance.net_profit_quarter ?? 0),
           icon: '📈',
           accent: 'accent-teal',
         },
         {
-          label: `Cash Balance · as of ${endLabel}`,
+          label: t('dashboard.cardCashBalance', { date: endLabel }),
           value: formatCurrency(finance.cash_balance_end ?? 0),
           icon: '🏦',
           accent: 'accent-gold',
@@ -174,7 +176,7 @@ function Dashboard() {
     <>
       <div className="quarter-bar">
         <div>
-          <strong>Quarterly Performance</strong>
+          <strong>{t('dashboard.quarterlyPerformance')}</strong>
           {quarter && (
             <span className="quarter-range">
               {quarter.label} — {quarter.dateRangeLabel}
@@ -202,7 +204,7 @@ function Dashboard() {
       )}
 
       <div className="admin-panel-head" style={{ marginTop: 8 }}>
-        <h2>Snapshot (to date)</h2>
+        <h2>{t('dashboard.snapshot')}</h2>
       </div>
       <div className="admin-cards">
         {snapshotCards.map((c) => (
@@ -230,7 +232,7 @@ function Dashboard() {
       {financeCards.length > 0 && (
         <>
           <div className="admin-panel-head" style={{ marginTop: 8 }}>
-            <h2>Financial Summary · {qLabel}</h2>
+            <h2>{t('dashboard.financialSummary', { quarter: qLabel })}</h2>
           </div>
           <div className="admin-cards">
             {financeCards.map((c) => (
@@ -247,21 +249,21 @@ function Dashboard() {
       <div className="admin-grid-2">
         <div className="admin-panel">
           <div className="admin-panel-head">
-            <h2>Recent Loan Applications</h2>
+            <h2>{t('dashboard.recentApplications')}</h2>
           </div>
           <div className="admin-panel-body" style={{ padding: 0 }}>
             {activity.recentApplications.length === 0 ? (
-              <Empty message="No applications yet." />
+              <Empty message={t('dashboard.noApplications')} />
             ) : (
               <div className="admin-table-wrap">
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>Application</th>
-                      <th>Customer</th>
-                      <th>Amount</th>
-                      <th>Status</th>
-                      <th>Date</th>
+                      <th>{t('dashboard.application')}</th>
+                      <th>{t('dashboard.customer')}</th>
+                      <th>{t('ui.amount')}</th>
+                      <th>{t('ui.status')}</th>
+                      <th>{t('ui.date')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -283,20 +285,20 @@ function Dashboard() {
 
         <div className="admin-panel">
           <div className="admin-panel-head">
-            <h2>Recent Repayments</h2>
+            <h2>{t('dashboard.recentRepayments')}</h2>
           </div>
           <div className="admin-panel-body" style={{ padding: 0 }}>
             {activity.recentRepayments.length === 0 ? (
-              <Empty message="No repayments yet." />
+              <Empty message={t('dashboard.noRepayments')} />
             ) : (
               <div className="admin-table-wrap">
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>Repayment</th>
-                      <th>Customer</th>
-                      <th>Amount</th>
-                      <th>Date</th>
+                      <th>{t('dashboard.repayment')}</th>
+                      <th>{t('dashboard.customer')}</th>
+                      <th>{t('ui.amount')}</th>
+                      <th>{t('ui.date')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -319,7 +321,7 @@ function Dashboard() {
       <div className="admin-grid-2">
         <div className="admin-panel">
           <div className="admin-panel-head">
-            <h2>Applications by Status · {qLabel}</h2>
+            <h2>{t('dashboard.applicationsByStatus', { quarter: qLabel })}</h2>
           </div>
           <div className="admin-panel-body">
             {activity.statusOverview.map((s) => (
@@ -356,18 +358,18 @@ function Dashboard() {
               </div>
             ))}
             {activity.statusOverview.length === 0 && (
-              <Empty message="No applications yet." />
+              <Empty message={t('dashboard.noApplications')} />
             )}
           </div>
         </div>
 
         <div className="admin-panel">
           <div className="admin-panel-head">
-            <h2>Payment Activity · {qLabel}</h2>
+            <h2>{t('dashboard.paymentActivity', { quarter: qLabel })}</h2>
           </div>
           <div className="admin-panel-body">
             {activity.paymentActivity.length === 0 ? (
-              <Empty message="No payment activity yet." />
+              <Empty message={t('dashboard.noPaymentActivity')} />
             ) : (
               <>
                 {activity.paymentActivity.map((p) => (

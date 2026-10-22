@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import ambientBg from '../assets/adele-ambient-2.jpg'
 import { api } from '../admin/api.js'
 import { isValidName, stripInvalidNameChars } from '../admin/name.js'
+import { useI18n } from '../i18n/index.jsx'
 import '../pages.css'
 
 const initialForm = {
@@ -13,6 +14,7 @@ const initialForm = {
 }
 
 function Contact() {
+  const { t } = useI18n()
   const [form, setForm] = useState(initialForm)
   const [sent, setSent] = useState(false)
   const [sending, setSending] = useState(false)
@@ -34,23 +36,23 @@ function Contact() {
     const next = {}
 
     if (!form.name.trim()) {
-      next.name = 'Name is required.'
+      next.name = t('contact.nameRequired')
     } else if (!isValidName(form.name)) {
-      next.name = 'Name may only contain letters (no numbers or symbols).'
+      next.name = t('contact.nameInvalid')
     }
 
     if (!form.email.trim()) {
-      next.email = 'Email address is required.'
+      next.email = t('contact.emailRequired')
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      next.email = 'Please enter a valid email address.'
+      next.email = t('contact.emailInvalid')
     }
 
-    if (!form.subject.trim()) next.subject = 'Subject is required.'
+    if (!form.subject.trim()) next.subject = t('contact.subjectRequired')
 
     if (!form.message.trim()) {
-      next.message = 'Message is required.'
+      next.message = t('contact.messageRequired')
     } else if (form.message.trim().length < 10) {
-      next.message = 'Message must be at least 10 characters.'
+      next.message = t('contact.messageShort')
     }
 
     return next
@@ -92,11 +94,8 @@ function Contact() {
         }}
       >
         <div className="container">
-          <h1>Contact Us</h1>
-          <p>
-            Have a question or need help with an application? We&apos;re here
-            for you.
-          </p>
+          <h1>{t('nav.contact')}</h1>
+          <p>{t('contact.subtitle')}</p>
         </div>
       </section>
 
@@ -104,13 +103,13 @@ function Contact() {
         <div className="container">
           <div className="contact-grid">
             <div>
-              <div className="section-label">Get in touch</div>
-              <h2>We&apos;d love to hear from you</h2>
+              <div className="section-label">{t('footer.getInTouch')}</div>
+              <h2>{t('contact.heading')}</h2>
 
               <div className="contact-info-item" style={{ marginTop: 24 }}>
                 <div className="icon">📧</div>
                 <div>
-                  <strong>Email</strong>
+                  <strong>{t('contact.email')}</strong>
                   <br />
                   adele1company@gmail.com
                 </div>
@@ -118,7 +117,7 @@ function Contact() {
               <div className="contact-info-item">
                 <div className="icon">📞</div>
                 <div>
-                  <strong>Phone</strong>
+                  <strong>{t('contact.phone')}</strong>
                   <br />
                   +250 788 739 764/+250 738 494 008
                 </div>
@@ -126,7 +125,7 @@ function Contact() {
               <div className="contact-info-item">
                 <div className="icon">📍</div>
                 <div>
-                  <strong>Office</strong>
+                  <strong>{t('contact.office')}</strong>
                   <br />
                   Kicukiro – Nyarugunga, Kigali
                   <br />
@@ -136,21 +135,20 @@ function Contact() {
               <div className="contact-info-item">
                 <div className="icon">🕐</div>
                 <div>
-                  <strong>Hours</strong>
+                  <strong>{t('contact.hours')}</strong>
                   <br />
-                  Monday – Friday, 9am – 6pm
+                  {t('contact.hoursValue')}
                 </div>
               </div>
               <Link to="/about" className="btn btn-primary">
-                About Us
+                {t('footer.about')}
               </Link>
             </div>
 
             <div>
               {sent && (
                 <div className="form-note">
-                  Thanks for reaching out! We&apos;ll get back to you within one
-                  business day.
+                  {t('contact.sent')}
                 </div>
               )}
               {submitError && (
@@ -161,7 +159,7 @@ function Contact() {
               <form onSubmit={handleSubmit} noValidate>
                 <div className="form-grid">
                   <div className="form-group">
-                    <label htmlFor="name">Name</label>
+                    <label htmlFor="name">{t('contact.name')}</label>
                     <input
                       id="name"
                       name="name"
@@ -174,7 +172,7 @@ function Contact() {
                     {errors.name && <small className="field-error">{errors.name}</small>}
                   </div>
                   <div className="form-group">
-                    <label htmlFor="email">Email</label>
+                    <label htmlFor="email">{t('contact.email')}</label>
                     <input
                       id="email"
                       name="email"
@@ -189,7 +187,7 @@ function Contact() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="subject">Subject</label>
+                  <label htmlFor="subject">{t('contact.subject')}</label>
                   <input
                     id="subject"
                     name="subject"
@@ -203,7 +201,7 @@ function Contact() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="message">Message</label>
+                  <label htmlFor="message">{t('contact.message')}</label>
                   <textarea
                     id="message"
                     name="message"
@@ -217,7 +215,7 @@ function Contact() {
                 </div>
 
                 <button type="submit" className="btn btn-primary" disabled={sending}>
-                  {sending ? 'Sending…' : 'Send Message'}
+                  {sending ? t('contact.sending') : t('contact.send')}
                 </button>
               </form>
             </div>

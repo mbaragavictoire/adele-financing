@@ -1,161 +1,150 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import moneyBg from '../assets/money-bg.jpg'
+import { useI18n } from '../i18n/index.jsx'
 import '../pages.css'
 
+// Each text field below holds a message key that is resolved with `t()` at
+// render time; the translated strings live in
+// src/i18n/messages/public-loanproducts.js.
 const products = [
   {
-    name: 'Personal Loans',
+    name: 'loanProducts.personal.name',
     icon: '👤',
-    purpose:
-      'To support individuals with personal financial needs such as family expenses, emergencies, home improvement, and personal projects.',
+    purpose: 'loanProducts.personal.purpose',
     eligible: [
-      'Salaried employees',
-      'Self-employed individuals',
-      'Business owners with stable income',
+      'loanProducts.personal.eligible.salaried',
+      'loanProducts.personal.eligible.selfEmployed',
+      'loanProducts.personal.eligible.businessOwners',
     ],
-    amount:
-      'Depending on the applicant’s income, repayment capacity, and financing needs.',
-    repayment:
-      'Flexible repayment period based on the loan amount and customer capacity but not exceeds 6 months.',
+    amount: 'loanProducts.personal.amount',
+    repayment: 'loanProducts.personal.repayment',
     documents: [
-      'National ID',
-      'Proof of income',
-      'Bank/Mobile Money statements',
-      'Loan application form',
-      'Collateral or guarantor (where applicable)',
+      'loanProducts.personal.documents.nationalId',
+      'loanProducts.personal.documents.income',
+      'loanProducts.personal.documents.bank',
+      'loanProducts.personal.documents.application',
+      'loanProducts.personal.documents.collateral',
     ],
-    apply:
-      'Submit a loan application online or visit ADELE offices with the required documents.',
+    apply: 'loanProducts.personal.apply',
   },
   {
-    name: 'SME & Business Loans',
+    name: 'loanProducts.sme.name',
     icon: '🏢',
-    purpose:
-      'To provide financing for business start-up, expansion, working capital, and business improvement.',
+    purpose: 'loanProducts.sme.purpose',
     eligible: [
-      'Small and Medium Enterprises (SMEs)',
-      'Entrepreneurs',
-      'Registered businesses',
+      'loanProducts.sme.eligible.smes',
+      'loanProducts.sme.eligible.entrepreneurs',
+      'loanProducts.sme.eligible.registered',
     ],
-    amount:
-      'Based on business performance, financial capacity, and financing requirements.',
-    repayment:
-      'Designed according to business cash flow and repayment capacity but not exceeds 6 months.',
+    amount: 'loanProducts.sme.amount',
+    repayment: 'loanProducts.sme.repayment',
     documents: [
-      'National ID of owner/directors',
-      'Business registration documents',
-      'Business plan or project proposal',
-      'Financial records',
-      'Bank statements',
-      'Collateral documents (where applicable)',
+      'loanProducts.sme.documents.ownerId',
+      'loanProducts.sme.documents.registration',
+      'loanProducts.sme.documents.plan',
+      'loanProducts.sme.documents.financial',
+      'loanProducts.sme.documents.bank',
+      'loanProducts.sme.documents.collateral',
     ],
-    apply:
-      'Complete the loan application and submit supporting business documents for assessment.',
+    apply: 'loanProducts.sme.apply',
   },
   {
-    name: 'Salary Loans',
+    name: 'loanProducts.salary.name',
     icon: '💼',
-    purpose:
-      'To provide quick financial support to employees for personal needs and planned expenses.',
+    purpose: 'loanProducts.salary.purpose',
     eligible: [
-      'Employees with regular salary income',
-      'Employees of approved organizations',
+      'loanProducts.salary.eligible.regular',
+      'loanProducts.salary.eligible.approvedOrgs',
     ],
-    amount: 'Determined based on monthly salary and repayment ability.',
-    repayment: 'Flexible period agreed according to customer income but not exceeds 6 months.',
+    amount: 'loanProducts.salary.amount',
+    repayment: 'loanProducts.salary.repayment',
     documents: [
-      'National ID',
-      'CRB',
-      'Employment contract or employment confirmation',
-      'Recent payslips',
-      'Bank statements',
-      'Employer confirmation (where applicable)',
+      'loanProducts.salary.documents.nationalId',
+      'loanProducts.salary.documents.crb',
+      'loanProducts.salary.documents.contract',
+      'loanProducts.salary.documents.payslips',
+      'loanProducts.salary.documents.bank',
+      'loanProducts.salary.documents.employer',
     ],
-    apply:
-      'Apply through ADELE by submitting the required employment and income documents.',
+    apply: 'loanProducts.salary.apply',
   },
   {
-    name: 'Agricultural Loans',
+    name: 'loanProducts.agriculture.name',
     icon: '🌾',
-    purpose:
-      'To support farmers and agribusinesses in production, inputs purchase, and agricultural development.',
+    purpose: 'loanProducts.agriculture.purpose',
     eligible: [
-      'Individual farmers',
-      'Farmer groups',
-      'Agribusiness operators',
+      'loanProducts.agriculture.eligible.farmers',
+      'loanProducts.agriculture.eligible.groups',
+      'loanProducts.agriculture.eligible.agribusiness',
     ],
-    amount:
-      'Based on the agricultural project, expected income, and repayment capacity.',
-    repayment: 'Aligned with the agricultural production cycle but not exceeds 6 months.',
+    amount: 'loanProducts.agriculture.amount',
+    repayment: 'loanProducts.agriculture.repayment',
     documents: [
-      'National ID',
-      'CRB',
-      'Proof of farming activity',
-      'Land ownership/lease documents (where applicable)',
-      'Project plan or budget',
-      'Guarantor or collateral (where applicable)',
+      'loanProducts.agriculture.documents.nationalId',
+      'loanProducts.agriculture.documents.crb',
+      'loanProducts.agriculture.documents.farming',
+      'loanProducts.agriculture.documents.land',
+      'loanProducts.agriculture.documents.plan',
+      'loanProducts.agriculture.documents.guarantor',
     ],
-    apply:
-      'Submit an application with details of the agricultural activity and financing needs.',
+    apply: 'loanProducts.agriculture.apply',
   },
   {
-    name: 'Asset Financing',
+    name: 'loanProducts.asset.name',
     icon: '🚗',
-    purpose:
-      'To help customers acquire productive assets such as equipment, vehicles, and business tools.',
+    purpose: 'loanProducts.asset.purpose',
     eligible: [
-      'Businesses',
-      'Entrepreneurs',
-      'Professionals and individuals with stable income',
+      'loanProducts.asset.eligible.businesses',
+      'loanProducts.asset.eligible.entrepreneurs',
+      'loanProducts.asset.eligible.professionals',
     ],
-    amount:
-      "Based on the value of the asset and customer's repayment capacity.",
-    repayment: 'Based on the asset type and financing agreement.',
+    amount: 'loanProducts.asset.amount',
+    repayment: 'loanProducts.asset.repayment',
     documents: [
-      'National ID',
-      'CRB',
-      'Income/business documents',
-      'Supplier quotation',
-      'Asset information',
-      'Collateral documents (where applicable)',
+      'loanProducts.asset.documents.nationalId',
+      'loanProducts.asset.documents.crb',
+      'loanProducts.asset.documents.income',
+      'loanProducts.asset.documents.quotation',
+      'loanProducts.asset.documents.assetInfo',
+      'loanProducts.asset.documents.collateral',
     ],
-    apply: 'Submit your request with asset details and supporting documents.',
+    apply: 'loanProducts.asset.apply',
   },
   {
-    name: 'Working Capital Loans',
+    name: 'loanProducts.workingCapital.name',
     icon: '💵',
-    purpose:
-      'To support daily business operations, stock purchases, and cash flow needs.',
+    purpose: 'loanProducts.workingCapital.purpose',
     eligible: [
-      'Existing businesses',
-      'Traders',
-      'SMEs with operating history',
+      'loanProducts.workingCapital.eligible.existing',
+      'loanProducts.workingCapital.eligible.traders',
+      'loanProducts.workingCapital.eligible.smes',
     ],
-    amount: 'Based on business turnover and financial capacity.',
-    repayment: 'Based on business cash flow and loan conditions but not exceeds 6 months.',
+    amount: 'loanProducts.workingCapital.amount',
+    repayment: 'loanProducts.workingCapital.repayment',
     documents: [
-      'Business registration documents',
-      'Business records',
-      'Bank statements',
-      'Sales records',
-      'Identification documents',
+      'loanProducts.workingCapital.documents.registration',
+      'loanProducts.workingCapital.documents.records',
+      'loanProducts.workingCapital.documents.bank',
+      'loanProducts.workingCapital.documents.sales',
+      'loanProducts.workingCapital.documents.identification',
     ],
-    apply: 'Apply by providing business information and required supporting documents.',
+    apply: 'loanProducts.workingCapital.apply',
   },
 ]
 
 const process = [
-  'Submit Application – Complete the loan application form.',
-  'Provide Documents – Submit required supporting documents.',
-  'Credit Assessment – ADELE evaluates the application and repayment capacity.',
-  'Loan Approval – Approved applications proceed for processing.',
-  'Disbursement – Funds are released after completion of requirements.',
-  'Repayment – Customer repays according to agreed terms.',
+  'loanProducts.process.step1',
+  'loanProducts.process.step2',
+  'loanProducts.process.step3',
+  'loanProducts.process.step4',
+  'loanProducts.process.step5',
+  'loanProducts.process.step6',
 ]
 
 function LoanProducts() {
   const [open, setOpen] = useState(0)
+  const { t } = useI18n()
 
   return (
     <div
@@ -169,12 +158,8 @@ function LoanProducts() {
     >
       <section className="page-head">
         <div className="container">
-          <h1>Our Loan Products</h1>
-          <p>
-            ADELE Financing Company Ltd provides various loan products designed
-            to support individuals, entrepreneurs, and businesses to achieve
-            their financial goals.
-          </p>
+          <h1>{t('loanProducts.title')}</h1>
+          <p>{t('loanProducts.subtitle')}</p>
         </div>
       </section>
 
@@ -190,52 +175,54 @@ function LoanProducts() {
                   onClick={() => setOpen(isOpen ? -1 : i)}
                 >
                   <span className="product-icon">{p.icon}</span>
-                  <span className="product-title">{p.name}</span>
-                  <span className="product-chevron">See more about loan</span>
+                  <span className="product-title">{t(p.name)}</span>
+                  <span className="product-chevron">
+                    {t('loanProducts.seeMore')}
+                  </span>
                 </button>
 
                 {isOpen && (
                   <div className="product-body">
                     <div className="product-section">
-                      <h4>Loan Purpose</h4>
-                      <p>{p.purpose}</p>
+                      <h4>{t('loanProducts.purpose')}</h4>
+                      <p>{t(p.purpose)}</p>
                     </div>
 
                     <div className="product-section">
-                      <h4>Eligible Customers</h4>
+                      <h4>{t('loanProducts.eligible')}</h4>
                       <ul>
                         {p.eligible.map((e) => (
-                          <li key={e}>{e}</li>
+                          <li key={e}>{t(e)}</li>
                         ))}
                       </ul>
                     </div>
 
                     <div className="product-section">
-                      <h4>Loan Amount</h4>
-                      <p>{p.amount}</p>
+                      <h4>{t('loanProducts.amountLabel')}</h4>
+                      <p>{t(p.amount)}</p>
                     </div>
 
                     <div className="product-section">
-                      <h4>Repayment Period</h4>
-                      <p>{p.repayment}</p>
+                      <h4>{t('loanProducts.repayment')}</h4>
+                      <p>{t(p.repayment)}</p>
                     </div>
 
                     <div className="product-section">
-                      <h4>Required Documents</h4>
+                      <h4>{t('loanProducts.documents')}</h4>
                       <ul>
                         {p.documents.map((d) => (
-                          <li key={d}>{d}</li>
+                          <li key={d}>{t(d)}</li>
                         ))}
                       </ul>
                     </div>
 
                     <div className="product-section">
-                      <h4>How to Apply</h4>
-                      <p>{p.apply}</p>
+                      <h4>{t('loanProducts.howToApply')}</h4>
+                      <p>{t(p.apply)}</p>
                     </div>
 
                     <Link to="/apply" className="btn btn-primary product-cta">
-                      Apply for this Loan
+                      {t('loanProducts.applyCta')}
                     </Link>
                   </div>
                 )}
@@ -248,14 +235,14 @@ function LoanProducts() {
       <section className="alt-bg">
         <div className="container">
           <div className="section-head">
-            <div className="section-label">Get started</div>
-            <h2>General Loan Application Process</h2>
+            <div className="section-label">{t('loanProducts.getStarted')}</div>
+            <h2>{t('loanProducts.processTitle')}</h2>
           </div>
           <div className="steps">
             {process.map((s, i) => (
               <div className="step-card" key={i}>
                 <div className="step-num">{i + 1}</div>
-                <p>{s}</p>
+                <p>{t(s)}</p>
               </div>
             ))}
           </div>
